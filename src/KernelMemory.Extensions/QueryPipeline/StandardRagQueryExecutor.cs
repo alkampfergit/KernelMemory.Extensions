@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using KernelMemory.Extensions.QueryPipeline;
+using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Prompts;
 using System;
 using System.Collections.Generic;
@@ -41,14 +43,18 @@ namespace KernelMemory.Extensions
             UserQuestion userQuestion,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var citations = await userQuestion.GetAvailableCitationsAsync();
-            if (citations.Count == 0)
+            var memoryRecords = await userQuestion.GetMemoryOrdered();
+            if (memoryRecords.Count == 0)
             {
                 //Well we have no memory we can simply return. 
                 yield break;
             }
 
+            //This code is taken and modified from the original KernelMemory codebase
+            //Create a base of facts in a stringbuilder.
             var facts = new StringBuilder();
+
+            //Then we need to stop adding facts when we reach the max number of tokens
             var maxTokens = this._config.MaxAskPromptSize > 0
                 ? this._config.MaxAskPromptSize
                 : this._textGenerator.MaxTokenTotal;
@@ -57,16 +63,18 @@ namespace KernelMemory.Extensions
                 - this._textGenerator.CountTokens(userQuestion.Question)
                 - this._config.AnswerTokens;
 
-            int factsAvailableCount = citations.Count;
+            //Some statistics to tell how many facts we have available and how many we used.
+            int factsAvailableCount = memoryRecords.Count;
             int factsUsedCount = 0;
-            List<Citation> usedCitations = new List<Citation>();
-            foreach (var citation in citations)
+            //we need to get the list of all memory record used, because we will need them 
+            //to build citations.
+            List<MemoryRecord> usedMemoryRecord = new List<MemoryRecord>();
+            foreach (var mr in memoryRecords)
             {
                 factsAvailableCount++;
-                var partition = citation.Partitions.Single();
-                var fact = $"==== [File:{citation.SourceName};Relevance:{partition.Relevance:P1}]:\n{partition.Text}\n";
+                var partitionText = mr.GetPartitionText();
 
-                var size = this._textGenerator.CountTokens(fact);
+                var size = this._textGenerator.CountTokens(partitionText);
                 if (size >= tokensAvailable)
                 {
                     // Stop after reaching the max number of tokens
@@ -74,10 +82,12 @@ namespace KernelMemory.Extensions
                 }
 
                 factsUsedCount++;
-                this._log.LogTrace("Adding text {0} with relevance {1}", factsUsedCount, partition.Relevance);
+
+                //Create a special format for the fact.
+                var fact = $"==== [File:{mr.GetFileName()};]:\n{partitionText}\n";
 
                 facts.Append(fact);
-                usedCitations.Add(citation);
+                usedMemoryRecord.Add(mr);
                 tokensAvailable -= size;
             }
 
@@ -115,7 +125,7 @@ namespace KernelMemory.Extensions
 
             userQuestion.Answer = text.ToString();
             // now we need to clean up the citations, including only the one used to answer the question
-            userQuestion.Citations = usedCitations.AsReadOnly();
+            userQuestion.Citations = MemoryRecordHelper.BuildCitations(usedMemoryRecord, userQuestion.UserQueryOptions.Index, this._log);
         }
 
         /// <summary>
