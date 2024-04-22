@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <AssemblyName>KernelMemory.Extensions</AssemblyName>
+    <RootNamespace>KernelMemory.Extensions</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Alkampfer.KernelMemory.ElasticSearch" Version="0.6.0-alpha0013" />
+    <PackageReference Include="CommandDotNet.Spectre" Version="3.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Microsoft.KernelMemory.Abstractions" Version="0.36.240416.1" />
+    <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.37.240420.2" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.7.1" />
+    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.7.1" />
+    <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.7.1" />
+    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.7.1" />
+    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.7.1" />
+    <PackageReference Include="TiktokenSharp" Version="1.1.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KernelMemory.Extensions.FunctionalTests" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Alkampfer.KernelMemory.Extensions</PackageId>
+    <Product>Extensions for Kernel Memory</Product>
+    <Description>Added some extensions for Kernel Memory.</Description>
+    <PackageTags>Memory, RAG, Kernel Memory, ElasticSearch, AI, Artificial Intelligence, Embeddings, Vector DB, Vector Search, ETL</PackageTags>
+    <Authors>Gian Maria Ricci</Authors>
+    <Company>Gian Maria Ricci</Company>
+    <Copyright>Copyright 2024 C°</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/alkampfergit/KernelMemory.Extensions</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+  </ItemGroup>
+
+</Project>
