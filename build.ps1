@@ -54,6 +54,7 @@ Assert-LastExecution -message "Error in building in release configuration" -halt
 
 Write-Host "\n\n*******************PUBLISHING SOLUTION*******************"
 dotnet pack "$runningDirectory/src/KernelMemory.Extensions/KernelMemory.Extensions.csproj" --configuration release -o "$runningDirectory/artifacts/NuGet" /p:PackageVersion=$nugetPackageVersion /p:AssemblyVersion=$assemblyVer /p:FileVersion=$assemblyFileVer /p:InformationalVersion=$assemblyInformationalVersion
+dotnet pack "$runningDirectory/src/KernelMemory.Extensions.Interfaces/KernelMemory.Extensions.Interfaces.csproj" --configuration release -o "$runningDirectory/artifacts/NuGet" /p:PackageVersion=$nugetPackageVersion /p:AssemblyVersion=$assemblyVer /p:FileVersion=$assemblyFileVer /p:InformationalVersion=$assemblyInformationalVersion
 Assert-LastExecution -message "Error in creating nuget packages.." -haltExecution $true
 
 if ($true -eq $nugetPublish) 

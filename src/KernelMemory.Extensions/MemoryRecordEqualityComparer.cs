@@ -19,6 +19,9 @@ internal class MemoryRecordEqualityComparer : IEqualityComparer<MemoryRecord>
 
     public int GetHashCode([DisallowNull] MemoryRecord obj)
     {
-        return obj.GetHashCode();
+        //hash code must be equal for object that are considered equal
+        return obj.GetDocumentId().GetHashCode() ^
+            obj.GetPartitionNumber().GetHashCode() ^
+            obj.GetFileId().GetHashCode();
     }
 }

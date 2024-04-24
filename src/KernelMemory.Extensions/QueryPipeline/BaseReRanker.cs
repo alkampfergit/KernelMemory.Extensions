@@ -43,17 +43,22 @@ namespace KernelMemory.Extensions.QueryPipeline
                 return Task.FromResult(candidates.Single().Value);
             }
 
-            //ok will perform a stupid reranking
+            //ok will perform a stupid reranking taking one element from every source
             List<MemoryRecord> retValue = new List<MemoryRecord>();
             var allMemoryList = candidates.Values.ToList();
             var maxLen = allMemoryList.Max(x => x.Count);
+            var equalityComparer = new MemoryRecordEqualityComparer();
             for (int i = 0; i < maxLen; i++)
             {
                 for (int j = 0; j < allMemoryList.Count; j++)
                 {
                     if (i < allMemoryList[j].Count)
                     {
-                        retValue.Add(allMemoryList[j].ElementAt(i));
+                        //check for deduplication
+                        if (!retValue.Contains(allMemoryList[j].ElementAt(i), equalityComparer))
+                        {
+                            retValue.Add(allMemoryList[j].ElementAt(i));
+                        }
                     }
                 }
             }

@@ -28,6 +28,7 @@ namespace KernelMemory.Extensions
 
             //from distinct array of citations extract text for re-ranking.
             var documents = allCitations
+                .Distinct(new MemoryRecordEqualityComparer())
                 .Select(c => c.GetPartitionText() ?? "")
                 .ToArray();
 

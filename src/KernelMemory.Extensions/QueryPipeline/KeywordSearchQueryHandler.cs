@@ -1,4 +1,5 @@
 ﻿using KernelMemory.ElasticSearch;
+using KernelMemory.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Diagnostics;
@@ -11,11 +12,11 @@ namespace KernelMemory.Extensions;
 
 public class KeywordSearchQueryHandler : BasicQueryHandler
 {
-    private readonly IAdvancedMemoryDb _advancedMemoryDb;
+    private readonly IKernelMemoryExtensionMemoryDb _advancedMemoryDb;
     private readonly ILogger<KeywordSearchQueryHandler> _log;
 
     public KeywordSearchQueryHandler(
-        IAdvancedMemoryDb advancedMemoryDb,
+        IKernelMemoryExtensionMemoryDb advancedMemoryDb,
         ILogger<KeywordSearchQueryHandler>? log = null)
     {
         _advancedMemoryDb = advancedMemoryDb;

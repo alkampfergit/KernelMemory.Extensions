@@ -1,11 +1,11 @@
-using DocumentFormat.OpenXml.Office2010.PowerPoint;
+using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
 using Moq;
 
-namespace KernelMemory.Extensions.FunctionalTests;
+namespace KernelMemory.Extensions.FunctionalTests.QueryPipeline;
 
 public class UserQuestionPipelineTests
 {
@@ -136,13 +136,13 @@ public class UserQuestionPipelineTests
 
         var memorySet1 = new MemoryRecord[]
         {
-            CreateCitation("Document_1", "fileId", "lin1", "pieceoftextaa"),
-            CreateCitation("Document_2", "fileId", "lin2", "pieceoftext3")
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftextaa"),
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_2", "fileId", 2, "pieceoftext3")
         };
 
         var memorySet2 = new MemoryRecord[]
         {
-            CreateCitation("Document_3", "fileId", "lin1", "pieceoftext of the same file")
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_3", "fileId", 1, "pieceoftext of the same file")
         };
         Mock<IQueryHandler> mockDependency1 = GenerateCitationsMock("citations1", memorySet1);
         Mock<IQueryHandler> mockDependency2 = GenerateCitationsMock("citations2", memorySet2);
@@ -171,9 +171,9 @@ public class UserQuestionPipelineTests
     {
         var sut = GenerateSut();
         var citations = new List<MemoryRecord>();
-        citations.Add(CreateCitation("Document_1", "fileId", "lin1", "pieceoftextaa"));
-        citations.Add(CreateCitation("Document_2", "fileId", "lin2", "pieceoftext3"));
-        citations.Add(CreateCitation("Document_1", "fileId", "lin1", "pieceoftext of the same file"));
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftextaa"));
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_2", "fileId", 2, "pieceoftext3"));
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftext of the same file"));
 
         Mock<IQueryHandler> citationMock = GenerateCitationsMock("test1", citations);
         Mock<IQueryHandler> answerMock = GenerateQueryAnswerMock("answered");
@@ -189,33 +189,6 @@ public class UserQuestionPipelineTests
         //now we need to verify the citations,
         Assert.Single(userQuestion.MemoryRecordPool);
         Assert.Equal(3, userQuestion.MemoryRecordPool["test1"].Count);
-    }
-
-    private static MemoryRecord CreateCitation(string documentId, string fileId, string link, string textPartition)
-    {
-        var mr = new MemoryRecord();
-        mr.Payload = new Dictionary<string, object>();
-        mr.Payload["text"] = textPartition;
-        mr.Tags = new TagCollection
-        {
-            { "__document_id", documentId },
-            { "__file_id", fileId }
-        };
-        
-        return mr;
-        //return new Memory()
-        //{
-        //    DocumentId = documentId,
-        //    FileId = fileId,
-        //    Link = link,
-        //    Partitions = new List<Citation.Partition>()
-        //    {
-        //        new Citation.Partition()
-        //        {
-        //            Text = textPartition
-        //        }
-        //    }
-        //};
     }
 
     private UserQueryOptions GenerateOptions()
@@ -316,7 +289,7 @@ public class UserQuestionPipelineTests
 
             userQuestion.Answer = "ANSWER";
 
-            var mr = new List<MemoryRecord>() { CreateCitation("a", "b", "c", "d") };
+            var mr = new List<MemoryRecord>() { MemoryRecordTestUtilities.CreateMemoryRecord("a", "b", 1, "d") };
             userQuestion.Citations = MemoryRecordHelper.BuildCitations(mr, "test-index", NullLogger.Instance);
         }
     }
