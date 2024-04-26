@@ -32,7 +32,7 @@ jobs:
       - name: build and publish
         shell: pwsh
         run: |
-          ./build.ps1 -nugetPublish $false -nugetApiKey ${{ secrets.NUGET_API_KEY }}
+          ./build.ps1 -nugetPublish $true -nugetApiKey ${{ secrets.NUGET_API_KEY }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2

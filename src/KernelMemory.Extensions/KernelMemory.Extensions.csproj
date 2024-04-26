@@ -12,19 +12,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Alkampfer.KernelMemory.ElasticSearch" Version="0.6.0-alpha0013" />
     <PackageReference Include="CommandDotNet.Spectre" Version="3.0.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
-    <PackageReference Include="Microsoft.KernelMemory.Abstractions" Version="0.36.240416.1" />
-    <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.37.240420.2" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.7.1" />
-    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.7.1" />
-    <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.7.1" />
-    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.7.1" />
-    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.7.1" />
+    <PackageReference Include="Microsoft.KernelMemory.Abstractions" Version="0.38.240424.2" />
+    <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.38.240425.1" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.9.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.9.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.9.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.9.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.9.0" />
     <PackageReference Include="TiktokenSharp" Version="1.1.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -44,8 +43,9 @@
     <PackageTags>Memory, RAG, Kernel Memory, ElasticSearch, AI, Artificial Intelligence, Embeddings, Vector DB, Vector Search, ETL</PackageTags>
     <Authors>Gian Maria Ricci</Authors>
     <Company>Gian Maria Ricci</Company>
-    <Copyright>Copyright 2024 C°</Copyright>
+    <Copyright>Copyright 2024 ©</Copyright>
     <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/alkampfergit/KernelMemory.Extensions</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     
@@ -53,6 +53,10 @@
 
   <ItemGroup>
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KernelMemory.Extensions.Interfaces\KernelMemory.Extensions.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

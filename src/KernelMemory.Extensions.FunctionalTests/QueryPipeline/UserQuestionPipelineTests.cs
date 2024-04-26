@@ -1,7 +1,11 @@
+using KernelMemory.Extensions.FunctionalTests.TestUtilities;
+using KernelMemory.Extensions.QueryPipeline;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.MemoryStorage;
 using Moq;
 
-namespace KernelMemory.Extensions.FunctionalTests;
+namespace KernelMemory.Extensions.FunctionalTests.QueryPipeline;
 
 public class UserQuestionPipelineTests
 {
@@ -130,18 +134,18 @@ public class UserQuestionPipelineTests
     {
         var sut = GenerateSut();
 
-        var citations1 = new Citation[]
+        var memorySet1 = new MemoryRecord[]
         {
-            CreateCitation("Document_1", "fileId", "lin1", "pieceoftextaa"),
-            CreateCitation("Document_2", "fileId", "lin2", "pieceoftext3")
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftextaa"),
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_2", "fileId", 2, "pieceoftext3")
         };
 
-        var citations2 = new Citation[]
+        var memorySet2 = new MemoryRecord[]
         {
-            CreateCitation("Document_3", "fileId", "lin1", "pieceoftext of the same file")
+            MemoryRecordTestUtilities.CreateMemoryRecord("Document_3", "fileId", 1, "pieceoftext of the same file")
         };
-        Mock<IQueryHandler> mockDependency1 = GenerateCitationsMock("citations1", citations1);
-        Mock<IQueryHandler> mockDependency2 = GenerateCitationsMock("citations2", citations2);
+        Mock<IQueryHandler> mockDependency1 = GenerateCitationsMock("citations1", memorySet1);
+        Mock<IQueryHandler> mockDependency2 = GenerateCitationsMock("citations2", memorySet2);
         Mock<IQueryHandler> mockDependency3 = GenerateRetrievalMock("pieceoftext", "Document_1", "fileId");
 
         sut.AddHandler(mockDependency1.Object);
@@ -157,14 +161,19 @@ public class UserQuestionPipelineTests
         Assert.NotNull(userQuestion.Citations);
     }
 
+    /// <summary>
+    /// This test was not really useful anymore after migration to a different 
+    /// structure of citations.
+    /// </summary>
+    /// <returns></returns>
     [Fact]
     public async Task Standard_search_regroup_citations()
     {
         var sut = GenerateSut();
-        var citations = new List<Citation>();
-        citations.Add(CreateCitation("Document_1", "fileId", "lin1", "pieceoftextaa"));
-        citations.Add(CreateCitation("Document_2", "fileId", "lin2", "pieceoftext3"));
-        citations.Add(CreateCitation("Document_1", "fileId", "lin1", "pieceoftext of the same file"));
+        var citations = new List<MemoryRecord>();
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftextaa"));
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_2", "fileId", 2, "pieceoftext3"));
+        citations.Add(MemoryRecordTestUtilities.CreateMemoryRecord("Document_1", "fileId", 1, "pieceoftext of the same file"));
 
         Mock<IQueryHandler> citationMock = GenerateCitationsMock("test1", citations);
         Mock<IQueryHandler> answerMock = GenerateQueryAnswerMock("answered");
@@ -178,35 +187,8 @@ public class UserQuestionPipelineTests
         Assert.True(userQuestion.Answered);
 
         //now we need to verify the citations,
-        Assert.Single(userQuestion.SourceCitations);
-        Assert.Equal(3, userQuestion.SourceCitations["test1"].Count);
-
-        var firstCitation1 = userQuestion.Citations.Single(c => c.Link == "lin1");
-        var firstCitation2 = userQuestion.Citations.Single(c => c.Link == "lin2");
-
-        Assert.Equal(2, firstCitation1.Partitions.Count);
-        Assert.Single(firstCitation2.Partitions);
-
-        Assert.Equal("pieceoftextaa", firstCitation1.Partitions[0].Text);
-        Assert.Equal("pieceoftext of the same file", firstCitation1.Partitions[1].Text);
-        Assert.Equal("pieceoftext3", firstCitation2.Partitions[0].Text);
-    }
-
-    private static Citation CreateCitation(string documentId, string fileId, string link, string textPartition)
-    {
-        return new Citation()
-        {
-            DocumentId = documentId,
-            FileId = fileId,
-            Link = link,
-            Partitions = new List<Citation.Partition>()
-            {
-                new Citation.Partition()
-                {
-                    Text = textPartition
-                }
-            }
-        };
+        Assert.Single(userQuestion.MemoryRecordPool);
+        Assert.Equal(3, userQuestion.MemoryRecordPool["test1"].Count);
     }
 
     private UserQueryOptions GenerateOptions()
@@ -231,7 +213,7 @@ public class UserQuestionPipelineTests
             .Callback<UserQuestion, CancellationToken>(async (x, _) =>
             {
                 //It must simulate taking all the citations
-                var citations = await x.GetAvailableCitationsAsync();
+                var citations = await x.GetMemoryOrdered();
                 var citation = new Citation()
                 {
                     DocumentId = documetnId,
@@ -262,8 +244,9 @@ public class UserQuestionPipelineTests
             .Callback<UserQuestion, CancellationToken>(async (x, _) =>
             {
                 //this simulate also a reranker.
-                var citations = await x.GetAvailableCitationsAsync();
-                x.Citations = citations;
+                var memoryRecords = await x.GetMemoryOrdered();
+
+                x.Citations = MemoryRecordHelper.BuildCitations(memoryRecords.ToList(), "test-index", NullLogger.Instance);
                 x.Answer = answer;
             });
 
@@ -273,12 +256,12 @@ public class UserQuestionPipelineTests
         return mockDependency;
     }
 
-    private static Mock<IQueryHandler> GenerateCitationsMock(string sourceName, IEnumerable<Citation> citations)
+    private static Mock<IQueryHandler> GenerateCitationsMock(string sourceName, IEnumerable<MemoryRecord> memoryRecords)
     {
         //now I need to mock the HandleAsync method modifying the user question adding extra questions
         var mockDependency = new Mock<IQueryHandler>();
         mockDependency.Setup(x => x.HandleAsync(It.IsAny<UserQuestion>(), It.IsAny<CancellationToken>()))
-            .Callback<UserQuestion, CancellationToken>((x, _) => x.AddCitations(sourceName, citations));
+            .Callback<UserQuestion, CancellationToken>((x, _) => x.AddMemoryRecordSource(sourceName, memoryRecords));
 
         //setup return value for the Name property
         mockDependency.Setup(x => x.Name).Returns(AnswerHandlerValue);
@@ -302,11 +285,12 @@ public class UserQuestionPipelineTests
 
         protected override async Task OnHandleAsync(UserQuestion userQuestion, CancellationToken cancellationToken)
         {
-            await userQuestion.GetAvailableCitationsAsync();
+            await userQuestion.GetMemoryOrdered();
 
             userQuestion.Answer = "ANSWER";
 
-            userQuestion.Citations = [CreateCitation("a", "b", "c", "d")];
+            var mr = new List<MemoryRecord>() { MemoryRecordTestUtilities.CreateMemoryRecord("a", "b", 1, "d") };
+            userQuestion.Citations = MemoryRecordHelper.BuildCitations(mr, "test-index", NullLogger.Instance);
         }
     }
 }

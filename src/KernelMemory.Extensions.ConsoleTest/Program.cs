@@ -52,15 +52,21 @@ public static class Program
                   .MoreChoicesText("[grey](Move up and down to select the example)[/]")
                   .AddChoices(choices.Keys.ToArray()));
 
-            var book = AnsiConsole.Prompt(new SelectionPrompt<string>()
-                .Title("Select the [green]book[/] to index")
-                .AddChoices([@"c:\temp\advancedapisecurity.pdf", @"S:\OneDrive\B19553_11.pdf"]));
-
             sampleType = choices[sample];
             if (sampleType != null)
             {
-                var sampleInstance = (ISample)serviceProvider.GetRequiredService(sampleType);
-                await sampleInstance.RunSample(book);
+                var sampleInstance = serviceProvider.GetRequiredService(sampleType);
+                if (sampleInstance is ISample2 sampleInstance2)
+                {
+                    await sampleInstance2.RunSample2();
+                }
+                else if (sampleInstance is ISample sampleInstance1)
+                {
+                    var book = AnsiConsole.Prompt(new SelectionPrompt<string>()
+                        .Title("Select the [green]book[/] to index")
+                        .AddChoices([@"c:\temp\advancedapisecurity.pdf", @"S:\OneDrive\B19553_11.pdf"]));
+                    await sampleInstance1.RunSample(book);
+                }
             }
         } while (sampleType != null);
     }

@@ -8,7 +8,7 @@
           <CodeCoverage>
             <ModulePaths>
               <Include>
-                <ModulePath>.*\\KernelMemory.ElasticSearch.dll$</ModulePath>
+                <ModulePath>.*\\KernelMemory.Extensions.dll$</ModulePath>
               </Include>
             </ModulePaths>
           </CodeCoverage>

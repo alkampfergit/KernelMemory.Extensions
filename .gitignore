@@ -15,6 +15,11 @@
 
 # Mono auto generated files
 mono_crash.*
+.mono/
+
+# Virtual Environment
+
+src/python/KernelMemory/
 
 # Build results
 [Dd]ebug/

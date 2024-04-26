@@ -40,7 +40,7 @@ namespace KernelMemory.Extensions
         /// <returns></returns>
         public async IAsyncEnumerable<UserQuestionProgress> ExecuteQueryAsync(UserQuestion userQuestion, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            userQuestion._reRanker = this._reRanker;
+            userQuestion.ReRanker = this._reRanker;
             //this is a completely different way to interact with the question, each handler should implement
             //the IAsyncEnumerable interface to communicate progress.
             if (!string.IsNullOrWhiteSpace(userQuestion.Question))
@@ -71,8 +71,6 @@ namespace KernelMemory.Extensions
                     }
                 }
 
-                HandleCitations(userQuestion);
-
                 yield return new UserQuestionProgress(UserQuestionProgressType.PipelineCompleted, "Pipeline completed");
             }
         }
@@ -83,7 +81,7 @@ namespace KernelMemory.Extensions
             {
                 return;
             }
-            userQuestion._reRanker = this._reRanker;
+            userQuestion.ReRanker = this._reRanker;
             foreach (var handler in _queryHandlers)
             {
                 //Execute the handler and verify if the question has been answered.
@@ -103,27 +101,6 @@ namespace KernelMemory.Extensions
                     userQuestion.AnswerHandler = handler.Name;
                     break;
                 }
-            }
-
-            HandleCitations(userQuestion);
-        }
-
-        private static void HandleCitations(UserQuestion userQuestion)
-        {
-            //if the question was answered we need to group citations
-            //TODO: change the internal data instead of using citations?
-            if (userQuestion.Answered && userQuestion.Citations != null)
-            {
-                userQuestion.Citations = userQuestion
-                    .Citations
-                    .GroupBy(c => c.Link)
-                    .Select(g =>
-                    {
-                        var firstCitation = g.First();
-                        //Accumulate all other segments
-                        firstCitation.Partitions = g.Select(c => c.Partitions.Single()).ToList();
-                        return firstCitation;
-                    }).ToList();
             }
         }
     }

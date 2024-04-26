@@ -1,4 +1,6 @@
 ﻿using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.MemoryStorage;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,12 +17,12 @@ namespace KernelMemory.Extensions.QueryPipeline
     {
         /// <summary>
         /// Accept the dictionary of source citations, and then will return an ordered list
-        /// of <see cref="Citation"/> and it can also perform deduplication.
+        /// of <see cref="MemoryRecord"/> and it can also perform deduplication.
         /// </summary>
         /// <param name="question">The original question made by the user.</param>
-        /// <param name="citations">List of the original citations.</param>
+        /// <param name="candidates">List of the original candidates.</param>
         /// <returns></returns>
-        Task<IReadOnlyCollection<Citation>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<Citation>> citations);
+        Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates);
     }
 
     /// <summary>
@@ -29,34 +31,39 @@ namespace KernelMemory.Extensions.QueryPipeline
     /// </summary>
     public class BaseReRanker : IReRanker
     {
-        public Task<IReadOnlyCollection<Citation>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<Citation>> citations)
+        public Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates)
         {
-            if (citations.Count == 0)
+            if (candidates.Count == 0)
             {
-                return Task.FromResult<IReadOnlyCollection<Citation>>(new List<Citation>());
+                return Task.FromResult<IReadOnlyCollection<MemoryRecord>>(Array.Empty<MemoryRecord>());
             }
 
-            if (citations.Count == 1)
+            if (candidates.Count == 1)
             {
-                return Task.FromResult(citations.Single().Value);
+                return Task.FromResult(candidates.Single().Value);
             }
 
-            //ok will perform a stupid reranking
-            List<Citation> retValue = new List<Citation>();
-            var allCitationsList = citations.Values.ToList();
-            var maxLen = allCitationsList.Max(x => x.Count);
+            //ok will perform a stupid reranking taking one element from every source
+            List<MemoryRecord> retValue = new List<MemoryRecord>();
+            var allMemoryList = candidates.Values.ToList();
+            var maxLen = allMemoryList.Max(x => x.Count);
+            var equalityComparer = new MemoryRecordEqualityComparer();
             for (int i = 0; i < maxLen; i++)
             {
-                for (int j = 0; j < allCitationsList.Count; j++)
+                for (int j = 0; j < allMemoryList.Count; j++)
                 {
-                    if (i < allCitationsList[j].Count)
+                    if (i < allMemoryList[j].Count)
                     {
-                        retValue.Add(allCitationsList[j].ElementAt(i));
+                        //check for deduplication
+                        if (!retValue.Contains(allMemoryList[j].ElementAt(i), equalityComparer))
+                        {
+                            retValue.Add(allMemoryList[j].ElementAt(i));
+                        }
                     }
                 }
             }
 
-            return Task.FromResult<IReadOnlyCollection<Citation>>(retValue.AsReadOnly());
+            return Task.FromResult<IReadOnlyCollection<MemoryRecord>>(retValue.AsReadOnly());
         }
     }
 }

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace KernelMemory.Extensions.FunctionalTests;
+namespace KernelMemory.Extensions.FunctionalTests.QueryPipeline;
 
 public class AsyncUserQuestionPipelineTests
 {

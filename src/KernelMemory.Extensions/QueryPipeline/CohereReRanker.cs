@@ -1,7 +1,6 @@
 ﻿using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.QueryPipeline;
-using Microsoft.KernelMemory;
-using SemanticMemory;
+using Microsoft.KernelMemory.MemoryStorage;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,19 +16,20 @@ namespace KernelMemory.Extensions
             _rawCohereClient = rawCohereClient;
         }
 
-        public async Task<IReadOnlyCollection<Citation>> ReRankAsync(
+        public async Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync(
             string question,
-            IReadOnlyDictionary<string, IReadOnlyCollection<Citation>> citations)
+            IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates)
         {
             //Create array of citations.
-            var allCitations = citations.Values
-                .SelectMany(c => c.Where(c => c.Partitions.Count > 0))
-                .Distinct(new SinglePartitionCitationComparer())
+            var allCitations = candidates.Values
+                .SelectMany(c => c)
+                .Distinct(new MemoryRecordEqualityComparer())
                 .ToArray();
 
             //from distinct array of citations extract text for re-ranking.
             var documents = allCitations
-                .Select(c => c.Partitions.First().Text)
+                .Distinct(new MemoryRecordEqualityComparer())
+                .Select(c => c.GetPartitionText() ?? "")
                 .ToArray();
 
             //TODO: you need to chunk documents

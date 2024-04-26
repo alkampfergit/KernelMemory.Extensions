@@ -1,5 +1,6 @@
 ﻿using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.MemoryStorage;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace KernelMemory.Extensions;
 /// </summary>
 public class UserQuestion
 {
-    internal IReRanker? _reRanker { get; set; }
+    internal IReRanker? ReRanker { get; set; }
 
     /// <summary>
     /// Add current re-ranker used to re-rank the results.
@@ -21,7 +22,7 @@ public class UserQuestion
     /// <param name="reRanker"></param>
     internal void AddReRanker(IReRanker reRanker)
     {
-        _reRanker = reRanker;
+        ReRanker = reRanker;
     }
 
     public UserQueryOptions UserQueryOptions { get; }
@@ -37,32 +38,33 @@ public class UserQuestion
 
     /// <summary>
     /// We can have more than one single way of search information, so we can
-    /// have multiple list of citations.
+    /// have multiple list of memory records, each one returned with a different
+    /// technique.
     /// </summary>
-    public ConcurrentDictionary<string, IReadOnlyCollection<Citation>> SourceCitations { get; } = new();
+    public ConcurrentDictionary<string, IReadOnlyCollection<MemoryRecord>> MemoryRecordPool { get; } = new();
 
     /// <summary>
-    /// Add a list of citations for a specific source, you will overwrite entirely the 
-    /// previous list of citations if you use the very source name.
+    /// Add a list of memory records for a specific source, you will overwrite entirely the 
+    /// previous list of memory records if you use the very source name.
     /// </summary>
     /// <param name="sourceName"></param>
-    /// <param name="citations"></param>
-    public void AddCitations(string sourceName, IEnumerable<Citation> citations)
+    /// <param name="memoryRecords"></param>
+    public void AddMemoryRecordSource(string sourceName, IEnumerable<MemoryRecord> memoryRecords)
     {
-        SourceCitations[sourceName] = citations.ToArray();
-        //Invalidate the citations, we need to rerank;
-        _citations = null;
+        MemoryRecordPool[sourceName] = memoryRecords.ToArray();
+        //Invalidate the memory records, we need to rerank;
+        _orderedMemoryRecords = null;
     }
 
-    private IReadOnlyCollection<Citation>? _citations;
+    private IReadOnlyCollection<MemoryRecord>? _orderedMemoryRecords;
 
     /// <summary>
-    /// This method will return all citations ordered and re-ranked to be used in the
+    /// This method will return all memory records ordered and re-ranked to be used in the
     /// G part of the RAG.
     /// </summary>
-    public async Task<IReadOnlyCollection<Citation>> GetAvailableCitationsAsync()
+    public async Task<IReadOnlyCollection<MemoryRecord>> GetMemoryOrdered()
     {
-        return _citations ??= await ReRankAsync();
+        return _orderedMemoryRecords ??= await ReRankAsync();
     }
 
     /// <summary>
@@ -74,24 +76,24 @@ public class UserQuestion
     /// <summary>
     /// If some error occurred we have the error here.
     /// </summary>
-    public string Errors { get; internal set; }
+    public string? Errors { get; internal set; }
 
-    private async Task<IReadOnlyCollection<Citation>> ReRankAsync()
+    private async Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync()
     {
-        if (SourceCitations.Count == 0)
+        if (MemoryRecordPool.IsEmpty)
         {
             return [];
         }
-        if (SourceCitations.Count == 1)
+        if (MemoryRecordPool.Count == 1)
         {
-            return [.. SourceCitations.First().Value];
+            return [.. MemoryRecordPool.First().Value];
         }
 
-        if (_reRanker == null)
+        if (ReRanker == null)
         {
-            throw new KernelMemoryException($"We have more than one Source Citation, source citations are {SourceCitations.Count} but we have no re-ranker");
+            throw new KernelMemoryException($"We have more than one Source memory records, source memory records are {MemoryRecordPool.Count} but we have no re-ranker");
         }
-        return await _reRanker.ReRankAsync(this.Question, SourceCitations);
+        return await ReRanker.ReRankAsync(this.Question, MemoryRecordPool);
     }
 
     /// <summary>

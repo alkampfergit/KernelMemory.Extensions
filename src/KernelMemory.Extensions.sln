@@ -6,13 +6,31 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GlobalFiles", "GlobalFiles", "{0D5C45F2-8887-4AA8-A1B8-F30DE409436C}"
 	ProjectSection(SolutionItems) = preProject
 		.runsettings = .runsettings
+		..\build.ps1 = ..\build.ps1
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KernelMemory.Extensions", "KernelMemory.Extensions\KernelMemory.Extensions.csproj", "{EFA03C66-0BB0-4661-946F-2F1200F6EC18}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KernelMemory.Extensions.FunctionalTests", "KernelMemory.Extensions.FunctionalTests\KernelMemory.Extensions.FunctionalTests.csproj", "{2F4A256B-A0EF-4EA3-83E2-59B902A22EDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KernelMemory.Extensions.ConsoleTest", "KernelMemory.Extensions.ConsoleTest\KernelMemory.Extensions.ConsoleTest.csproj", "{BDACB037-6E8B-4CFA-98FE-8C68BF573F6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KernelMemory.Extensions.ConsoleTest", "KernelMemory.Extensions.ConsoleTest\KernelMemory.Extensions.ConsoleTest.csproj", "{BDACB037-6E8B-4CFA-98FE-8C68BF573F6F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KernelMemory.Extensions.Interfaces", "KernelMemory.Extensions.Interfaces\KernelMemory.Extensions.Interfaces.csproj", "{705858B6-CEE1-45D6-9D02-388B5005C685}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{DAE104E4-C38D-46DA-B0F8-88376CB0798C}"
+	ProjectSection(SolutionItems) = preProject
+		..\.config\dotnet-tools.json = ..\.config\dotnet-tools.json
+		..\.config\GitVersion.yml = ..\.config\GitVersion.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "python", "python", "{D81AA667-7D0D-461D-9651-9F1736EB23F8}"
+	ProjectSection(SolutionItems) = preProject
+		python\cross_encoder_pool.py = python\cross_encoder_pool.py
+		python\rerankV1.py = python\rerankV1.py
+		python\sbert.py = python\sbert.py
+		python\sentence_transformers_pool.py = python\sentence_transformers_pool.py
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +50,10 @@ Global
 		{BDACB037-6E8B-4CFA-98FE-8C68BF573F6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDACB037-6E8B-4CFA-98FE-8C68BF573F6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDACB037-6E8B-4CFA-98FE-8C68BF573F6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{705858B6-CEE1-45D6-9D02-388B5005C685}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{705858B6-CEE1-45D6-9D02-388B5005C685}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{705858B6-CEE1-45D6-9D02-388B5005C685}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{705858B6-CEE1-45D6-9D02-388B5005C685}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
