@@ -9,5 +9,9 @@ It is a different implementation of the search pipeline that allows the user to 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=alkampfergit_KernelMemory.Extensions) 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alkampfergit_KernelMemory.Extensions&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alkampfergit_KernelMemory.Extensions)
 
+[![NuGet Version](https://img.shields.io/nuget/v/Alkampfer.KernelMemory.Extensions)](https://www.nuget.org/packages/Alkampfer.KernelMemory.Extensions/) [![NuGet Downloads](https://img.shields.io/nuget/dt/Alkampfer.KernelMemory.Extensions?style=flat)](https://www.nuget.org/stats/packages/Alkampfer.KernelMemory.Extensions?groupby=Version)
+
+
+
 
 
