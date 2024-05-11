@@ -181,9 +181,6 @@ internal class CustomSearchPipelineBase : ISample2
             .WithAzureOpenAITextGeneration(chatConfig)
             .WithAzureOpenAITextEmbeddingGeneration(embeddingConfig);
 
-
-
-
         kernelMemoryBuilder
            .WithSimpleFileStorage(new SimpleFileStorageConfig()
            {
