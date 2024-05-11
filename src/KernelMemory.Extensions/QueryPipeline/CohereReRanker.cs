@@ -21,13 +21,13 @@ namespace KernelMemory.Extensions
             IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates)
         {
             //Create array of citations.
-            var allCitations = candidates.Values
+            var allMemoryRecords = candidates.Values
                 .SelectMany(c => c)
                 .Distinct(new MemoryRecordEqualityComparer())
                 .ToArray();
 
             //from distinct array of citations extract text for re-ranking.
-            var documents = allCitations
+            var documents = allMemoryRecords
                 .Distinct(new MemoryRecordEqualityComparer())
                 .Select(c => c.GetPartitionText() ?? "")
                 .ToArray();
@@ -36,7 +36,7 @@ namespace KernelMemory.Extensions
             var reRankRequest = new CohereReRankRequest(question, documents);
             var result = await _rawCohereClient.ReRankAsync(reRankRequest);
 
-            return result.Results.Select(d => allCitations[d.Index]).ToList();
+            return result.Results.Select(d => allMemoryRecords[d.Index]).ToList();
         }
     }
 }
