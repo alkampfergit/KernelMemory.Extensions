@@ -16,20 +16,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandDotNet.Spectre" Version="3.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.4.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
-    <PackageReference Include="Microsoft.KernelMemory.Abstractions" Version="0.38.240424.2" />
-    <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.38.240425.1" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.9.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.9.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.9.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.9.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.9.0" />
-    <PackageReference Include="TiktokenSharp" Version="1.1.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+    <PackageReference Include="CommandDotNet.Spectre" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+    <PackageReference Include="Microsoft.KernelMemory.Abstractions" />
+    <PackageReference Include="Microsoft.KernelMemory.Core" />
+    <PackageReference Include="Microsoft.SemanticKernel" />
+    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" />
+    <PackageReference Include="Microsoft.SemanticKernel.Yaml" />
+    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" />
+    <PackageReference Include="Microsoft.SemanticKernel.Core" />
+    <PackageReference Include="TiktokenSharp" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
