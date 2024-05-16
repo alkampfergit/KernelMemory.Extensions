@@ -35,7 +35,9 @@ namespace KernelMemory.Extensions
             this._config.Validate();
             _textGenerator = textGenerator;
             this._log = log ?? DefaultLogger<StandardRagQueryExecutor>.Instance;
+#pragma warning disable KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             promptProvider ??= new EmbeddedPromptProvider();
+#pragma warning restore KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             this._answerPrompt = promptProvider.ReadPrompt(Constants.PromptNamesAnswerWithFacts);
         }
 

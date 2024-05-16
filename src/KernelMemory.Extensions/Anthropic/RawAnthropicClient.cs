@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace KernelMemory.ElasticSearch.Anthropic;
@@ -26,16 +28,16 @@ public class RawAnthropicClient
         _httpClientName = httpClientName;
     }
 
-    public class CallClaudeStreamingParams
-    {
-        public string ModelName { get; set; }
-        public string System { get; set; }
-        public string Prompt { get; set; }
-        public double Temperature { get; set; }
-        public int MaxTokens { get; set; }
-    }
-
-    public async IAsyncEnumerable<StreamingResponseMessage> CallClaudeStreaming(CallClaudeStreamingParams parameters)
+    /// <summary>
+    /// Simply invoke the Claude Chat API to get a response with streaming. 
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async IAsyncEnumerable<StreamingResponseMessage> CallClaudeStreaming(
+        CallClaudeStreamingParams parameters,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var requestPayload = new MessageRequest
         {
@@ -66,30 +68,42 @@ public class RawAnthropicClient
         };
 
         var httpClient = GetHttpClient();
-        var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            var responseError = await response.Content.ReadAsStringAsync();
+            var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
         }
         response.EnsureSuccessStatusCode();
-        var responseStream = await response.Content.ReadAsStreamAsync();
+        var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using (StreamReader reader = new(responseStream))
         {
             while (!reader.EndOfStream)
             {
-                string line = await reader.ReadLineAsync();
+                string? line = await reader.ReadLineAsync(cancellationToken);
+
+                if (line == null)
+                {
+                    //this is strange and should not happen, but if we read a null line, we simply need to skip
+                    continue;
+                }
 
                 //this is the first line of message
                 var eventMessage = line.Split(":")[1].Trim();
 
                 //now read the message
-                line = await reader.ReadLineAsync()!;
+                line = await reader.ReadLineAsync(cancellationToken)!;
+
+                if (line == null)
+                {
+                    //this is strange and should not happen, but if we read a null line, we simply need to skip
+                    continue;
+                }
 
                 if (eventMessage == "content_block_delta")
                 {
                     var data = line.Substring("data: ".Length).Trim();
-                    var messageDelta = JsonSerializer.Deserialize<ContentBlockDelta>(data);
+                    var messageDelta = JsonSerializer.Deserialize<ContentBlockDelta>(data)!;
                     yield return messageDelta;
                 }
                 else if (eventMessage == "message_stop")
@@ -98,7 +112,7 @@ public class RawAnthropicClient
                 }
 
                 //read the next empty line
-                await reader.ReadLineAsync();
+                await reader.ReadLineAsync(cancellationToken);
             }
         }
     }
@@ -150,8 +164,19 @@ public class RawAnthropicClient
         }
         response.EnsureSuccessStatusCode();
         string jsonResponse = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<MessageResponse>(jsonResponse);
+        return JsonSerializer.Deserialize<MessageResponse>(jsonResponse)!;
     }
+}
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+public class CallClaudeStreamingParams
+{
+    public string ModelName { get; set; }
+    public string System { get; set; }
+    public string Prompt { get; set; }
+    public double Temperature { get; set; }
+    public int MaxTokens { get; set; }
 }
 
 public class MessageRequest
@@ -221,3 +246,4 @@ public class Delta
     [JsonPropertyName("text")]
     public string Text { get; set; }
 }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
