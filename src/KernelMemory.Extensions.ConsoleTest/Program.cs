@@ -1,3 +1,4 @@
+using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.ConsoleTest.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
@@ -21,10 +22,6 @@ public static class Program
         services.AddSingleton<CustomSearchPipelineBase>();
         services.AddSingleton<AnthropicSample>();
         services.AddHttpClient();
-
-        var sp = services.BuildServiceProvider();
-        var httpFactory = sp.GetService<IHttpClientFactory>();
-        await TestCohere(httpFactory);
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -66,46 +63,6 @@ public static class Program
                 }
             }
         } while (sampleType != null);
-    }
-
-    private static async Task TestCohere(IHttpClientFactory? httpFactory)
-    {
-        var cohereConfig = new Cohere.CohereConfiguration
-        {
-            ApiKey = Dotenv.Get("COHERE_API_KEY"),
-        };
-        var rr = new Cohere.RawCohereClient(cohereConfig, httpFactory);
-
-        var records = new List<MemoryRecord>();
-        records.Add(CreateMemoryRecord("doc1", "file1", 1, "Carson City is the capital city of the American state of Nevada."));
-        records.Add(CreateMemoryRecord("doc2", "file1", 2, "The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan."));
-        records.Add(CreateMemoryRecord("doc3", "file1", 3, "Washington, D.C. (also known as simply Washington or D.C., and officially as the District of Columbia) is the capital of the United States. It is a federal district."));
-        records.Add(CreateMemoryRecord("doc4", "file1", 4, "Capital punishment (the death penalty) has existed in the United States since before the United States was a country. As of 2017, capital punishment is legal in 30 of the 50 states."));
-
-        var cohereRagRequest = Cohere.CohereRagRequest.CreateFromMemoryRecord("What is the capital of the United States?", records);
-        
-        var asiterator = rr.RagQueryStreamingAsync(cohereRagRequest);
-        var list = await asiterator.ToListAsync();
-
-        //Cohere commandR+ api non streaming
-        //var ragQueryResult = await rr.RagQueryAsync(cohereRagRequest);
-
-        ////pretty print the result in console serializing ragQueryResult in json formatted
-        //AnsiConsole.Write(JsonSerializer.Serialize(
-        //    ragQueryResult,
-        //    new JsonSerializerOptions() 
-        //    {
-        //        WriteIndented = true
-        //    })
-        // );
-
-        //var ReRankResult = await rr.ReRankAsync(new Cohere.CohereReRankRequest("What is the capital of the United States?",
-        //    ["Carson City is the capital city of the American state of Nevada.",
-        //          "The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan.",
-        //          "Washington, D.C. (also known as simply Washington or D.C., and officially as the District of Columbia) is the capital of the United States. It is a federal district.",
-        //          "Capital punishment (the death penalty) has existed in the United States since beforethe United States was a country. As of 2017, capital punishment is legal in 30 of the 50 states."]));
-
-
     }
 
     private static MemoryRecord CreateMemoryRecord(string documentId, string fileId, int partitionNumber, string textPartition)

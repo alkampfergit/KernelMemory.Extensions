@@ -28,8 +28,7 @@ public class CohereReRankTests
     {
         var cohereConfig = new CohereConfiguration
         {
-            //ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-            ApiKey = "4F9DspZG4KbIGTL5z4kb4Sid480iCgjxjObdPorh",
+            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
         };
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?",
@@ -47,8 +46,7 @@ public class CohereReRankTests
     {
         var cohereConfig = new CohereConfiguration
         {
-            //ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-            ApiKey = "4F9DspZG4KbIGTL5z4kb4Sid480iCgjxjObdPorh",
+            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
         };
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
@@ -69,8 +67,7 @@ public class CohereReRankTests
     {
         var cohereConfig = new CohereConfiguration
         {
-            //ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-            ApiKey = "4F9DspZG4KbIGTL5z4kb4Sid480iCgjxjObdPorh",
+            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
         };
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 

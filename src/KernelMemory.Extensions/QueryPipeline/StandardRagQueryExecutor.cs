@@ -167,12 +167,5 @@ namespace KernelMemory.Extensions
 
             return this._textGenerator.GenerateTextAsync(prompt, options);
         }
-
-        private static bool ValueIsEquivalentTo(string value, string target)
-        {
-            value = value.Trim().Trim('.', '"', '\'', '`', '~', '!', '?', '@', '#', '$', '%', '^', '+', '*', '_', '-', '=', '|', '\\', '/', '(', ')', '[', ']', '{', '}', '<', '>');
-            target = target.Trim().Trim('.', '"', '\'', '`', '~', '!', '?', '@', '#', '$', '%', '^', '+', '*', '_', '-', '=', '|', '\\', '/', '(', ')', '[', ']', '{', '}', '<', '>');
-            return string.Equals(value, target, StringComparison.OrdinalIgnoreCase);
-        }
     }
 }

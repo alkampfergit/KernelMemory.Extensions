@@ -26,8 +26,13 @@ internal class CustomSearchPipelineBase : ISample2
         CohereConfiguration cohereConfiguration = new CohereConfiguration();
         cohereConfiguration.ApiKey = Dotenv.Get("COHERE_API_KEY");
 
+        CoereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
+        coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 5;
+
         services.AddSingleton(cohereConfiguration);
+        services.AddSingleton(coereCommandRagQueryExecutorConfiguration);
         services.AddSingleton<RawCohereClient>();
+        services.AddSingleton<CoereCommandRQueryExecutor>();
         services.AddHttpClient();
 
         var storageToUse = AnsiConsole.Prompt(new SelectionPrompt<string>()
@@ -36,7 +41,14 @@ internal class CustomSearchPipelineBase : ISample2
                 "elasticsearch", "FileSystem (debug)"
         ]));
 
-        var builder = CreateBasicKernelMemoryBuilder(services, storageToUse == "elasticsearch");
+        var queryExecutorToUse = AnsiConsole.Prompt(new SelectionPrompt<string>()
+            .Title("Select the query executor to use")
+            .AddChoices(["KernelMemory Default", "Cohere CommandR+"]));
+
+        var builder = CreateBasicKernelMemoryBuilder(
+            services,
+            storageToUse == "elasticsearch",
+            queryExecutorToUse == "Cohere CommandR+");
         var kernelMemory = builder.Build<MemoryServerless>();
 
         var serviceProvider = services.BuildServiceProvider();
@@ -151,7 +163,8 @@ internal class CustomSearchPipelineBase : ISample2
 
     private static IKernelMemoryBuilder CreateBasicKernelMemoryBuilder(
         ServiceCollection services,
-        bool useElasticSearch)
+        bool useElasticSearch,
+        bool useCohereCommandRPlusForQueryExecutor)
     {
         // we need a series of services to use Kernel Memory, the first one is
         // an embedding service that will be used to create dense vector for
@@ -215,6 +228,9 @@ internal class CustomSearchPipelineBase : ISample2
         services.AddSingleton<CohereReRanker>();
         services.AddSingleton<StandardVectorSearchQueryHandler>();
         services.AddSingleton<KeywordSearchQueryHandler>();
+
+        //Register query executors
+        services.AddSingleton<CoereCommandRQueryExecutor>();
         services.AddSingleton<StandardRagQueryExecutor>();
 
         //now create the pipeline
@@ -227,9 +243,16 @@ internal class CustomSearchPipelineBase : ISample2
                 config.AddHandler<KeywordSearchQueryHandler>();
             }
 
-            config
-                .AddHandler<StandardRagQueryExecutor>()
-                .SetReRanker<CohereReRanker>();
+            if (useCohereCommandRPlusForQueryExecutor)
+            {
+                config.AddHandler<CoereCommandRQueryExecutor>();
+            }
+            else
+            {
+                config.AddHandler<StandardRagQueryExecutor>();
+            }
+
+            config.SetReRanker<CohereReRanker>();
         });
         return kernelMemoryBuilder;
     }
