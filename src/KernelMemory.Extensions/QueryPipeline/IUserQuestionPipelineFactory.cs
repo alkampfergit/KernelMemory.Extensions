@@ -31,7 +31,7 @@ namespace KernelMemory.Extensions.QueryPipeline
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
-        public UserQuestionPipeline Create(string pipelineName = IUserQuestionPipelineFactory.DefaultPipelineName)
+        public UserQuestionPipeline Create(string? pipelineName = IUserQuestionPipelineFactory.DefaultPipelineName)
         {
             if (string.IsNullOrEmpty(pipelineName))
             {
