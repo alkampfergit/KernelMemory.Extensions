@@ -27,7 +27,7 @@ internal class CustomSearchPipelineBase : ISample2
         cohereConfiguration.ApiKey = Dotenv.Get("COHERE_API_KEY");
 
         CoereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
-        coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 5;
+        coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 10;
 
         services.AddSingleton(cohereConfiguration);
         services.AddSingleton(coereCommandRagQueryExecutorConfiguration);

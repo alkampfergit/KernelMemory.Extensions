@@ -97,7 +97,7 @@ public class CoereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
         }
 
         List<MemoryRecord> usedMemoryRecord = usableMemoryRecords
-            .Where((mr, i) => usedMemoryRecordIds.Contains(i))
+            .Where((_, i) => usedMemoryRecordIds.Contains(i))
             .ToList();
 
         // now we need to clean up the citations, including only the one used to answer the question
