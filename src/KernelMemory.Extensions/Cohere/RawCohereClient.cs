@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -20,7 +21,7 @@ public class RawCohereClient
     private readonly string _apiKey;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string? _httpClientName;
-    private readonly string _baseUrl = "https://api.cohere.ai/";
+    private readonly string _baseUrl;
 
     public RawCohereClient(
         CohereConfiguration config,
@@ -33,6 +34,7 @@ public class RawCohereClient
         }
         _log = log ?? DefaultLogger<RawCohereClient>.Instance;
         _apiKey = config.ApiKey;
+        _baseUrl = config.BaseUrl;
         _httpClientFactory = httpClientFactory;
         _httpClientName = config.HttpFactoryClientName;
     }
@@ -50,8 +52,6 @@ public class RawCohereClient
     /// <summary>
     /// https://docs.cohere.com/reference/rerank
     /// </summary>
-    /// <param name="reRankRequest"></param>
-    /// <returns></returns>
     public async Task<ReRankResult> ReRankAsync(
         CohereReRankRequest reRankRequest,
         CancellationToken cancellationToken = default)
@@ -115,13 +115,12 @@ public class RawCohereClient
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.Add("x-api-key", _apiKey);
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/chat")
         {
             Content = content,
         };
-        request.Headers.Add("Authorization", $"bearer {_apiKey}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
         var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
