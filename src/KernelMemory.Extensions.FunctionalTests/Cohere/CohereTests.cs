@@ -26,10 +26,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_reranking()
     {
-        var cohereConfig = new CohereConfiguration
-        {
-            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-        };
+        CohereConfiguration cohereConfig = CreatConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?",
             ["Carson City is the capital city of the American state of Nevada.",
@@ -44,10 +41,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag_streaming()
     {
-        var cohereConfig = new CohereConfiguration
-        {
-            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-        };
+        CohereConfiguration cohereConfig = CreatConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -65,10 +59,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag()
     {
-        var cohereConfig = new CohereConfiguration
-        {
-            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-        };
+        CohereConfiguration cohereConfig = CreatConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -84,5 +75,19 @@ public class CohereReRankTests
         var ragResponse = await cohereClient.RagQueryAsync(cohereRagRequest);
         Assert.NotNull(ragResponse.Text);
         Assert.True(ragResponse.Citations.Count > 1);
+    }
+
+    private static CohereConfiguration CreatConfig()
+    {
+        var cohereConfig = new CohereConfiguration
+        {
+            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
+        };
+        if (string.IsNullOrEmpty(cohereConfig.ApiKey))
+        {
+            throw new Exception("COHERE_API_KEY is not set");
+        }
+
+        return cohereConfig;
     }
 }
