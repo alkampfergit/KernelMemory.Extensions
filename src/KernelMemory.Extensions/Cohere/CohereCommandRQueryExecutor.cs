@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions.Cohere;
 
-public class CoereCommandRQueryExecutorConfiguration
+public class CohereCommandRQueryExecutorConfiguration
 {
     /// <summary>
     /// <para>
@@ -29,17 +29,17 @@ public class CoereCommandRQueryExecutorConfiguration
     public int MaxMemoryRecord { get; set; }
 }
 
-public class CoereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
+public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
 {
     public override string Name => "CoereCommandRagQueryExecutor";
 
     private readonly RawCohereClient _rawCohereClient;
-    private readonly CoereCommandRQueryExecutorConfiguration _config;
+    private readonly CohereCommandRQueryExecutorConfiguration _config;
     private readonly ILogger<StandardRagQueryExecutor> _log;
 
-    public CoereCommandRQueryExecutor(
+    public CohereCommandRQueryExecutor(
         RawCohereClient rawCohereClient,
-        CoereCommandRQueryExecutorConfiguration config,
+        CohereCommandRQueryExecutorConfiguration config,
         ILogger<StandardRagQueryExecutor>? log = null)
     {
         _rawCohereClient = rawCohereClient;

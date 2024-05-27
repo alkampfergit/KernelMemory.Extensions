@@ -26,13 +26,13 @@ internal class CustomSearchPipelineBase : ISample2
         CohereConfiguration cohereConfiguration = new CohereConfiguration();
         cohereConfiguration.ApiKey = Dotenv.Get("COHERE_API_KEY");
 
-        CoereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
+        CohereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
         coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 10;
 
         services.AddSingleton(cohereConfiguration);
         services.AddSingleton(coereCommandRagQueryExecutorConfiguration);
         services.AddSingleton<RawCohereClient>();
-        services.AddSingleton<CoereCommandRQueryExecutor>();
+        services.AddSingleton<CohereCommandRQueryExecutor>();
         services.AddHttpClient();
 
         var storageToUse = AnsiConsole.Prompt(new SelectionPrompt<string>()
@@ -230,7 +230,7 @@ internal class CustomSearchPipelineBase : ISample2
         services.AddSingleton<KeywordSearchQueryHandler>();
 
         //Register query executors
-        services.AddSingleton<CoereCommandRQueryExecutor>();
+        services.AddSingleton<CohereCommandRQueryExecutor>();
         services.AddSingleton<StandardRagQueryExecutor>();
 
         //now create the pipeline
@@ -245,7 +245,7 @@ internal class CustomSearchPipelineBase : ISample2
 
             if (useCohereCommandRPlusForQueryExecutor)
             {
-                config.AddHandler<CoereCommandRQueryExecutor>();
+                config.AddHandler<CohereCommandRQueryExecutor>();
             }
             else
             {
