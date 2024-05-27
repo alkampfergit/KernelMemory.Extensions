@@ -23,12 +23,13 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
     <PackageReference Include="Microsoft.KernelMemory.Abstractions" />
     <PackageReference Include="Microsoft.KernelMemory.Core" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" />
     <PackageReference Include="Microsoft.SemanticKernel.Yaml" />
     <PackageReference Include="Microsoft.SemanticKernel.Abstractions" />
     <PackageReference Include="Microsoft.SemanticKernel.Core" />
-    <PackageReference Include="TiktokenSharp" />
+
     <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

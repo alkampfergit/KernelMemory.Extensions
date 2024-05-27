@@ -1,12 +1,11 @@
 ﻿using Microsoft.KernelMemory.AI;
+using Microsoft.ML.Tokenizers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using TiktokenSharp;
-using static KernelMemory.ElasticSearch.Anthropic.RawAnthropicClient;
 
 namespace KernelMemory.ElasticSearch.Anthropic;
 
@@ -15,7 +14,11 @@ internal class AnthropicTextGeneration : ITextGenerator
     private readonly AnthropicTextGenerationConfiguration _config;
     private readonly RawAnthropicClient _client;
 
-    private static readonly TikToken _tokenizer = TikToken.GetEncoding("cl100k_base");
+    /// <summary>
+    /// We do not have cohere tokenizer directly in C# - in this first version we use gpt4 tokenizer
+    /// and we know that this is a raw approximation but we only need to count.
+    /// </summary>
+    private static readonly Tokenizer _tokenizer = Tokenizer.CreateTiktokenForModel("gpt-4");
 
     public AnthropicTextGeneration(
         IHttpClientFactory httpClientFactory,
@@ -31,7 +34,7 @@ internal class AnthropicTextGeneration : ITextGenerator
     /// <inheritdoc />
     public int CountTokens(string text)
     {
-        return _tokenizer.Encode(text).Count;
+        return _tokenizer.CountTokens(text);
     }
 
     /// <inheritdoc />

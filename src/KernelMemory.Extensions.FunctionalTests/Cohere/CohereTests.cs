@@ -3,6 +3,7 @@ using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,6 +76,14 @@ public class CohereReRankTests
         var ragResponse = await cohereClient.RagQueryAsync(cohereRagRequest);
         Assert.NotNull(ragResponse.Text);
         Assert.True(ragResponse.Citations.Count > 1);
+    }
+
+    [Fact]
+    public void Tokenizer_raw_test()
+    {
+        CohereTokenizer tokenizer = new (_ihttpClientFactory);
+        var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
+        Assert.Equal(8, count);
     }
 
     private static CohereConfiguration CreatConfig()
