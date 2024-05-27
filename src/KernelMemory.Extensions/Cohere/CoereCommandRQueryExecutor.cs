@@ -88,13 +88,23 @@ public class CoereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
             .Select(c => int.Parse(c.Substring("doc_".Length)))
             .ToHashSet();
 
+        var extCitations = new List<(int doc, string citation)>();
         foreach (var citationMessages in responses.Where(r => r.ResponseType == CohereRagResponseType.Citations))
         {
             foreach (var citation in citationMessages.Citations)
             {
+                extCitations.AddRange(
+                    citation.DocumentIds.Select(d => (int.Parse(d.Substring("doc_".Length)), citation.Text)));
                 //TODO: we can have more information, like keyword used for citations. 
             }
         }
+
+        userQuestion.ExtendedCitation = extCitations
+            .GroupBy(c => c.doc)
+            .Where(c => c.Key < usableMemoryRecords.Count)
+            .Select(c => new { Group = c, MemoryRecord = usableMemoryRecords[c.Key] })
+            .Select(c => new ExtendedCitation(c.MemoryRecord.Id, c.MemoryRecord.GetFileId(), c.Group.Select(g => g.citation).ToList()))
+            .ToList();
 
         List<MemoryRecord> usedMemoryRecord = usableMemoryRecords
             .Where((_, i) => usedMemoryRecordIds.Contains(i))
