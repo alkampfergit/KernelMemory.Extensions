@@ -47,7 +47,7 @@ namespace KernelMemory.Extensions.QueryPipeline
             List<MemoryRecord> retValue = new List<MemoryRecord>();
             var allMemoryList = candidates.Values.ToList();
             var maxLen = allMemoryList.Max(x => x.Count);
-            var equalityComparer = new MemoryRecordEqualityComparer();
+            var equalityComparer = MemoryRecordEqualityComparer.Instance;
             for (int i = 0; i < maxLen; i++)
             {
                 for (int j = 0; j < allMemoryList.Count; j++)

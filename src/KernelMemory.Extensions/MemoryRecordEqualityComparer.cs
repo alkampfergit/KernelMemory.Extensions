@@ -6,6 +6,8 @@ namespace KernelMemory.Extensions;
 
 internal class MemoryRecordEqualityComparer : IEqualityComparer<MemoryRecord>
 {
+    internal static MemoryRecordEqualityComparer Instance { get; } = new MemoryRecordEqualityComparer();
+
     public bool Equals(MemoryRecord? x, MemoryRecord? y)
     {
         if (x == null || y == null)
