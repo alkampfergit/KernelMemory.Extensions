@@ -9,12 +9,12 @@ namespace KernelMemory.Extensions.Helper
     /// from Microsoft packages that offer optimized countTokens method.
     /// </summary>
 #pragma warning disable KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    public class TiktokenKmTokenizer : ITextTokenizer
+    public class MicrosoftMlTiktokenTokenizer : ITextTokenizer
 #pragma warning restore KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     {
-        private Tokenizer _tikToken;
+        private readonly Tokenizer _tikToken;
 
-        public TiktokenKmTokenizer(string baseModelName)
+        public MicrosoftMlTiktokenTokenizer(string baseModelName)
         {
             _tikToken = Tiktoken.CreateTiktokenForModel(baseModelName);
         }
