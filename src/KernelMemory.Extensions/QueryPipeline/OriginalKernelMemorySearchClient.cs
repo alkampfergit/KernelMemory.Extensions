@@ -20,7 +20,7 @@ namespace KernelMemory.Extensions
         private readonly IMemoryDb _memoryDb;
         private readonly ITextGenerator _textGenerator;
         private readonly SearchClientConfig _config;
-        private readonly ILogger<SearchClient> _log;
+        private readonly ILogger<ISearchClient> _log;
         private readonly string _answerPrompt;
 
         public OriginalKernelMemorySearchClient(
@@ -28,17 +28,19 @@ namespace KernelMemory.Extensions
             ITextGenerator textGenerator,
             SearchClientConfig? config = null,
             IPromptProvider? promptProvider = null,
-            ILogger<SearchClient>? log = null)
+            ILogger<ISearchClient>? log = null)
         {
             this._memoryDb = memoryDb;
             this._textGenerator = textGenerator;
             this._config = config ?? new SearchClientConfig();
             this._config.Validate();
 
+#pragma warning disable KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             promptProvider ??= new EmbeddedPromptProvider();
+#pragma warning restore KMEXP00 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             this._answerPrompt = promptProvider.ReadPrompt(Constants.PromptNamesAnswerWithFacts);
 
-            this._log = log ?? DefaultLogger<SearchClient>.Instance;
+            this._log = log ?? DefaultLogger<ISearchClient>.Instance;
 
             if (this._memoryDb == null)
             {
@@ -151,7 +153,7 @@ namespace KernelMemory.Extensions
                 citation.Link = linkToFile;
                 citation.SourceContentType = memory.GetFileContentType(this._log);
                 citation.SourceName = memory.GetFileName(this._log);
-                citation.SourceUrl = memory.GetWebPageUrl();
+                citation.SourceUrl = memory.GetWebPageUrl(index);
 
                 citation.Partitions.Add(new Citation.Partition
                 {
@@ -272,7 +274,7 @@ namespace KernelMemory.Extensions
                 citation.Link = linkToFile;
                 citation.SourceContentType = memory.GetFileContentType(this._log);
                 citation.SourceName = fileName;
-                citation.SourceUrl = memory.GetWebPageUrl();
+                citation.SourceUrl = memory.GetWebPageUrl(index);
 
                 citation.Partitions.Add(new Citation.Partition
                 {

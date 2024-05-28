@@ -1,32 +1,40 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.MemoryStorage;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions.Cohere;
 
-public class CohereConfiguration
-{
-    public string ApiKey { get; set; }
-
-    public string? HttpFactoryClientName { get; set; }
-}
-
 public class RawCohereClient
 {
+    private readonly ILogger<RawCohereClient> _log;
     private readonly string _apiKey;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string? _httpClientName;
-    private readonly string _baseUrl = "https://api.cohere.ai/";
+    private readonly string _baseUrl;
 
     public RawCohereClient(
         CohereConfiguration config,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILogger<RawCohereClient>? log = null)
     {
+        if (String.IsNullOrEmpty(config.ApiKey))
+        {
+            throw new ArgumentException("ApiKey is required", nameof(config.ApiKey));
+        }
+        _log = log ?? DefaultLogger<RawCohereClient>.Instance;
         _apiKey = config.ApiKey;
+        _baseUrl = config.BaseUrl;
         _httpClientFactory = httpClientFactory;
         _httpClientName = config.HttpFactoryClientName;
     }
@@ -44,9 +52,9 @@ public class RawCohereClient
     /// <summary>
     /// https://docs.cohere.com/reference/rerank
     /// </summary>
-    /// <param name="reRankRequest"></param>
-    /// <returns></returns>
-    public async Task<ReRankResult> ReRankAsync(CohereReRankRequest reRankRequest)
+    public async Task<ReRankResult> ReRankAsync(
+        CohereReRankRequest reRankRequest,
+        CancellationToken cancellationToken = default)
     {
         var client = CreateHttpClient();
 
@@ -69,20 +77,147 @@ public class RawCohereClient
         };
         request.Headers.Add("Authorization", $"bearer {_apiKey}");
 
-        var response = await client.SendAsync(request).ConfigureAwait(false);
+        var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         //now perform the request.
         if (!response.IsSuccessStatusCode)
         {
-            var responseError = await response.Content.ReadAsStringAsync();
+            var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
         }
         response.EnsureSuccessStatusCode();
-        var responseString = await response.Content.ReadAsStringAsync();
+        var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        return JsonSerializer.Deserialize<ReRankResult>(responseString);
+        return JsonSerializer.Deserialize<ReRankResult>(responseString)!;
+    }
+
+    /// <summary>
+    /// https://docs.cohere.com/docs/retrieval-augmented-generation-rag
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<CohereRagResponse> RagQueryAsync(
+        CohereRagRequest cohereRagRequest,
+        CancellationToken cancellationToken = default)
+    {
+        if (cohereRagRequest is null)
+        {
+            throw new ArgumentNullException(nameof(cohereRagRequest));
+        }
+
+        if (cohereRagRequest.Stream)
+        {
+            throw new NotImplementedException("Streaming is not supported, please use RagQueryStreamingAsync");
+        }
+
+        var client = CreateHttpClient();
+
+        string jsonPayload = JsonSerializer.Serialize(cohereRagRequest);
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/chat")
+        {
+            Content = content,
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+
+        var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+        //now perform the request.
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
+        }
+        response.EnsureSuccessStatusCode();
+        var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return JsonSerializer.Deserialize<CohereRagResponse>(responseString)!;
+    }
+
+    /// <summary>
+    /// https://docs.cohere.com/docs/retrieval-augmented-generation-rag
+    /// https://docs.cohere.com/docs/streaming
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
+    public async IAsyncEnumerable<CohereRagStreamingResponse> RagQueryStreamingAsync(
+        CohereRagRequest cohereRagRequest,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (cohereRagRequest is null)
+        {
+            throw new ArgumentNullException(nameof(cohereRagRequest));
+        }
+
+        var client = CreateHttpClient();
+        //force streaming
+        cohereRagRequest.Stream = true;
+
+        string jsonPayload = JsonSerializer.Serialize(cohereRagRequest);
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        content.Headers.Add("x-api-key", _apiKey);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/chat")
+        {
+            Content = content,
+        };
+        request.Headers.Add("Authorization", $"bearer {_apiKey}");
+
+        var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+        //now perform the request.
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
+        }
+
+        response.EnsureSuccessStatusCode();
+        var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+        using (StreamReader reader = new(responseStream))
+        {
+            while (!reader.EndOfStream)
+            {
+                string line = (await reader.ReadLineAsync(cancellationToken))!;
+                var data = JsonSerializer.Deserialize<ChatStreamEvent>(line)!;
+
+                if (data.EventType == "stream-start" || data.EventType == "stream-end" || data.EventType == "search-results")
+                {
+                    //not interested in this events
+                    continue;
+                }
+
+                if (data.EventType == "text-generation")
+                {
+                    yield return new CohereRagStreamingResponse()
+                    {
+                        Text = data.Text,
+                        ResponseType = CohereRagResponseType.Text,
+                    };
+                }
+                else if (data.EventType == "citation-generation")
+                {
+                    yield return new CohereRagStreamingResponse()
+                    {
+                        Citations = data.Citations,
+                        ResponseType = CohereRagResponseType.Citations
+                    };
+                }
+                else
+                {
+                    //not supported.
+                    _log.LogWarning("Cohere stream api receved unknown event data type {0}", data.EventType);
+                }
+            }
+        }
     }
 }
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 public record CohereReRankRequest(string Question, string[] Answers);
 
@@ -101,7 +236,202 @@ public class CohereReRankRequestBody
     public string[] Documents { get; init; } = null!;
 }
 
-public class Document
+public class CohereRagRequest
+{
+    /// <summary>
+    /// Factory method to create a request directly from the user question and memory records
+    /// </summary>
+    /// <param name="question">Question of the user</param>
+    /// <param name="memoryRecords">MemoryRecords you want to pass to answer query.</param>
+    /// <returns></returns>
+    public static CohereRagRequest CreateFromMemoryRecord(string question, IEnumerable<MemoryRecord> memoryRecords)
+    {
+        //create a request body directly with system.text.json
+        CohereRagRequest ragRequest = new CohereRagRequest()
+        {
+            Message = question,
+            Documents = new List<RagDocument>()
+        };
+
+        foreach (var memory in memoryRecords)
+        {
+            ragRequest.Documents.Add(new RagDocument()
+            {
+                DocId = memory.Id,
+                Text = memory.GetPartitionText()
+            });
+        }
+
+        return ragRequest;
+    }
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; }
+
+    [JsonPropertyName("model")]
+    public string Model { get; set; } = "command-r-plus";
+
+    [JsonPropertyName("documents")]
+    public List<RagDocument> Documents { get; set; }
+
+    [JsonPropertyName("temperature")]
+    public float Temperature { get; set; }
+
+    [JsonPropertyName("stream")]
+    public bool Stream { get; internal set; }
+
+    [JsonPropertyName("preamble")]
+    public string Preamble { get; set; }
+
+    [JsonPropertyName("chat_history")]
+    public List<ChatMessage> ChatHistory { get; set; }
+
+    [JsonPropertyName("conversation_id")]
+    public string ConversationId { get; set; }
+
+    [JsonPropertyName("prompt_truncation")]
+    public string PromptTruncation { get; set; } = "OFF";
+
+    [JsonPropertyName("connectors")]
+    public List<Connector> Connectors { get; set; }
+
+    [JsonPropertyName("max_tokens")]
+    public int? MaxTokens { get; set; }
+
+    [JsonPropertyName("max_input_tokens")]
+    public int? MaxInputTokens { get; set; }
+
+    [JsonPropertyName("k")]
+    public int? K { get; set; }
+
+    [JsonPropertyName("p")]
+    public float? P { get; set; } = 0.75f;
+
+    [JsonPropertyName("seed")]
+    public float? Seed { get; set; }
+
+    [JsonPropertyName("stop_sequences")]
+    public List<string> StopSequences { get; set; }
+
+    [JsonPropertyName("frequency_penalty")]
+    public float? FrequencyPenalty { get; set; } = 0.0f;
+
+    [JsonPropertyName("presence_penalty")]
+    public float? PresencePenalty { get; set; } = 0.0f;
+
+    [JsonPropertyName("tools")]
+    public List<Tool> Tools { get; set; }
+
+    [JsonPropertyName("tool_results")]
+    public List<ToolResult> ToolResults { get; set; }
+}
+
+public class ChatMessage
+{
+    [JsonPropertyName("role")]
+    public string Role { get; set; }
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; }
+}
+
+public class Connector
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("user_access_token")]
+    public string UserAccessToken { get; set; }
+
+    [JsonPropertyName("continue_on_failure")]
+    public bool ContinueOnFailure { get; set; } = false;
+
+    [JsonPropertyName("options")]
+    public Dictionary<string, string> Options { get; set; }
+
+    [JsonPropertyName("search_queries_only")]
+    public bool SearchQueriesOnly { get; set; } = false;
+}
+
+public class Tool
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
+
+    [JsonPropertyName("parameter_definitions")]
+    public Dictionary<string, ToolParameter> ParameterDefinitions { get; set; }
+}
+
+public class ToolParameter
+{
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
+
+    [JsonPropertyName("required")]
+    public bool Required { get; set; }
+}
+
+public class ToolResult
+{
+    [JsonPropertyName("call")]
+    public ToolCall Call { get; set; }
+
+    [JsonPropertyName("outputs")]
+    public List<Dictionary<string, object>> Outputs { get; set; }
+}
+
+public class ToolCall
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("parameters")]
+    public Dictionary<string, object> Parameters { get; set; }
+}
+
+public class CohereRagResponse
+{
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("citations")]
+    public List<Citation> Citations { get; set; }
+
+    [JsonPropertyName("documents")]
+    public List<RagDocument> Documents { get; set; }
+}
+
+public class Citation
+{
+    [JsonPropertyName("start")]
+    public int Start { get; set; }
+
+    [JsonPropertyName("end")]
+    public int End { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("document_ids")]
+    public List<string> DocumentIds { get; set; }
+}
+
+public class RagDocument
+{
+    [JsonPropertyName("docid")]
+    public string DocId { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+}
+
+public class ReRankDocument
 {
     [JsonPropertyName("text")]
     public string Text { get; set; } = null!;
@@ -110,7 +440,7 @@ public class Document
 public class Result
 {
     [JsonPropertyName("document")]
-    public Document? Document { get; set; }
+    public ReRankDocument? Document { get; set; }
 
     [JsonPropertyName("index")]
     public int Index { get; set; }
@@ -181,3 +511,54 @@ public class ReRankResult
     [JsonPropertyName("meta")]
     public Meta Meta { get; set; } = null!;
 }
+
+public class ChatStreamEvent
+{
+    [JsonPropertyName("is_finished")]
+    public bool IsFinished { get; set; }
+
+    [JsonPropertyName("event_type")]
+    public string EventType { get; set; }
+
+    [JsonPropertyName("generation_id")]
+    public string GenerationId { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("citations")]
+    public List<CohereRagCitation> Citations { get; set; }
+}
+
+public class CohereRagCitation
+{
+    [JsonPropertyName("start")]
+    public int Start { get; set; }
+
+    [JsonPropertyName("end")]
+    public int End { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("document_ids")]
+    public List<string> DocumentIds { get; set; }
+}
+   
+public class CohereRagStreamingResponse
+{
+    public CohereRagResponseType ResponseType { get; set; }
+
+    public string Text { get; set; }
+
+    public List<CohereRagCitation> Citations { get; set; }
+}
+
+public enum CohereRagResponseType
+{
+    Unknown = 0,
+    Text = 1,
+    Citations = 2,
+}
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

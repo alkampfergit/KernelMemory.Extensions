@@ -12,9 +12,9 @@ namespace KernelMemory.Extensions.FunctionalTests.TestUtilities
             mr.Payload["text"] = textPartition;
             mr.Tags = new TagCollection
             {
-                { "__document_id", documentId },
-                { "__file_id", fileId },
-                { "__part_n", partitionNumber.ToString() }
+                { Constants.ReservedDocumentIdTag, documentId },
+                { Constants.ReservedFileIdTag, fileId },
+                { Constants.ReservedFilePartitionNumberTag, partitionNumber.ToString() }
             };
 
             return mr;

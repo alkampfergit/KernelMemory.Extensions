@@ -48,7 +48,7 @@ namespace KernelMemory.Extensions.QueryPipeline
                 citation.Link = linkToFile;
                 citation.SourceContentType = memory.GetFileContentType(logger);
                 citation.SourceName = memory.GetFileName(logger);
-                citation.SourceUrl = memory.GetWebPageUrl();
+                citation.SourceUrl = memory.GetWebPageUrl(index);
 
                 citation.Partitions.Add(new Citation.Partition
                 {

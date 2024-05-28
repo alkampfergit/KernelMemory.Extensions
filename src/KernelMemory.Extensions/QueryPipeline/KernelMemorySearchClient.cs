@@ -16,14 +16,14 @@ namespace SemanticMemory.Extensions
         private readonly ITextGenerator _textGenerator;
         private readonly SearchClientConfig? _config;
         private readonly IPromptProvider? _promptProvider;
-        private readonly ILogger<SearchClient>? _log;
+        private readonly ILogger<ISearchClient>? _log;
 
         public KernelMemorySearchClient(
             IMemoryDb memoryDb,
             ITextGenerator textGenerator,
             SearchClientConfig? config = null,
             IPromptProvider? promptProvider = null,
-            ILogger<SearchClient>? log = null)
+            ILogger<ISearchClient>? log = null)
         {
             _memoryDb = memoryDb;
             _textGenerator = textGenerator;

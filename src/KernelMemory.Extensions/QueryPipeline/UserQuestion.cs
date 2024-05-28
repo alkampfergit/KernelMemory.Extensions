@@ -74,6 +74,11 @@ public class UserQuestion
     public IReadOnlyCollection<Citation>? Citations { get; set; }
 
     /// <summary>
+    /// Citation objects from the extension.
+    /// </summary>
+    public IReadOnlyCollection<ExtendedCitation>? ExtendedCitation { get; set; }
+
+    /// <summary>
     /// If some error occurred we have the error here.
     /// </summary>
     public string? Errors { get; internal set; }
@@ -136,3 +141,12 @@ public class UserQueryOptions
 }
 
 public record Question(string Text);
+
+/// <summary>
+/// Using original <see cref="Citation"/> object is ok, but we can have different form
+/// of citations especially from LLM like cohere.
+/// </summary>
+/// <param name="DocumentId"></param>
+/// <param name="FileId"></param>
+/// <param name="Chunks"></param>
+public record ExtendedCitation(string DocumentId, string FileId, IReadOnlyCollection<string> Chunks);
