@@ -4,6 +4,7 @@ using Microsoft.KernelMemory.MemoryStorage;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -56,6 +57,12 @@ public class RawCohereClient
         CohereReRankRequest reRankRequest,
         CancellationToken cancellationToken = default)
     {
+        if (!reRankRequest.Answers.Any()) 
+        {
+            //Caller does not specify any answer, we have nothing to reorder.
+            return ReRankResult.Empty;
+        }
+
         var client = CreateHttpClient();
 
         var payload = new CohereReRankRequestBody()
@@ -502,11 +509,16 @@ public class Meta
 
 public class ReRankResult
 {
+    public static ReRankResult Empty { get; } = new ReRankResult()
+    {
+        Results = (new List<Result>()).AsReadOnly(),
+    };
+
     [JsonPropertyName("id")]
     public string Id { get; set; } = null!;
 
     [JsonPropertyName("results")]
-    public List<Result> Results { get; set; } = null!;
+    public IReadOnlyList<Result> Results { get; set; } = null!;
 
     [JsonPropertyName("meta")]
     public Meta Meta { get; set; } = null!;

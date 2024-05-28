@@ -40,6 +40,17 @@ public class CohereReRankTests
     }
 
     [Fact]
+    public async Task Can_rerank_empty_document_list()
+    {
+        CohereConfiguration cohereConfig = CreatConfig();
+        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?", []));
+
+        Assert.NotNull(ReRankResult);
+        Assert.True(ReRankResult.Results.Count == 0);
+    }
+
+    [Fact]
     public async Task Basic_cohere_Rag_streaming()
     {
         CohereConfiguration cohereConfig = CreatConfig();

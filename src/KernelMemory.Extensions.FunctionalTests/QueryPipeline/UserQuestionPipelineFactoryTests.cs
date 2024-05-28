@@ -150,6 +150,14 @@ public class UserQuestionPipelineFactoryTests
         }
     }
 
+    private class TextLenghtReRanker : IReRanker
+    {
+        public Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates)
+        {
+            return Task.FromResult<IReadOnlyCollection<MemoryRecord>>(candidates.SelectMany(c => c.Value).OrderBy(c => c.GetPartitionText().Length).ToArray());
+        }
+    }
+
     private static void ResolveAndAssert(ServiceCollection serviceCollection, string key, IMemoryDb expected)
     {
         serviceCollection.AddKernelMemoryUserQuestionPipeline(config =>

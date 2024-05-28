@@ -26,7 +26,7 @@ public class CohereCommandRQueryExecutorConfiguration
     /// https://storage.googleapis.com/cohere-public/tokenizers/command-r-plus.json
     /// </para>
     /// </summary>
-    public int MaxMemoryRecord { get; set; }
+    public int MaxMemoryRecord { get; set; } = 5;
 }
 
 public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
