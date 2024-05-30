@@ -90,6 +90,26 @@ public class CohereReRankTests
     }
 
     [Fact]
+    public async Task Basic_cohere_embed_test()
+    {
+        CohereConfiguration cohereConfig = CreatConfig();
+        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+
+        var embedRequest = new CohereEmbedRequest
+        {
+            Texts = new List<string> { "example text 1", "example text 2" },
+            Model = CohereModels.EmbedEnglishV3,
+            InputType = CohereInputTypes.Classification,
+            EmbeddingTypes = new List<string> { "float" },
+            Truncate = "END"
+        };
+
+        var embedResult = await cohereClient.EmbedAsync(embedRequest);
+        Assert.Equal(2, embedResult.Embeddings.Values.Count);
+        Assert.Equal(1024, embedResult.Embeddings.Values[0].Length);
+    }
+
+    [Fact]
     public void Tokenizer_raw_test()
     {
         CohereTokenizer tokenizer = new (_ihttpClientFactory);
