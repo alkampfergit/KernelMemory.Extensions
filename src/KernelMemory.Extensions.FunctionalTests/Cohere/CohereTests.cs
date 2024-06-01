@@ -27,7 +27,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_reranking()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?",
             ["Carson City is the capital city of the American state of Nevada.",
@@ -42,7 +42,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Can_rerank_empty_document_list()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?", []));
 
@@ -53,7 +53,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag_streaming()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -71,7 +71,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -92,7 +92,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_embed_test()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var embedRequest = new CohereEmbedRequest
@@ -117,7 +117,7 @@ public class CohereReRankTests
         Assert.Equal(8, count);
     }
 
-    private static CohereConfiguration CreatConfig()
+    private static CohereConfiguration CreateConfig()
     {
         var cohereConfig = new CohereConfiguration
         {
