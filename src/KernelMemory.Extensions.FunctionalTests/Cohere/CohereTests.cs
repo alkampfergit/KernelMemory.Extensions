@@ -1,14 +1,7 @@
-﻿using CommandDotNet.Execution;
-using KernelMemory.Extensions.Cohere;
+﻿using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryStorage;
-using Microsoft.ML.Tokenizers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions.FunctionalTests.Cohere;
 
@@ -112,7 +105,7 @@ public class CohereReRankTests
     [Fact]
     public void Tokenizer_raw_test()
     {
-        CohereTokenizer tokenizer = new (_ihttpClientFactory);
+        CohereTokenizer tokenizer = new(_ihttpClientFactory);
         var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
         Assert.Equal(8, count);
     }
