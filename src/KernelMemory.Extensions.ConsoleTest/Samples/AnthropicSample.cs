@@ -2,8 +2,7 @@
 using KernelMemory.Extensions.ConsoleTest.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.ContentStorage;
-using Microsoft.KernelMemory.ContentStorage.DevTools;
+using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
@@ -33,7 +32,9 @@ namespace SemanticMemory.Samples
             }
 
             var vectorDb = serviceProvider.GetRequiredService<IMemoryDb>();
-            var storage = serviceProvider.GetRequiredService<IContentStorage>();
+#pragma warning disable KMEXP03 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            var storage = serviceProvider.GetRequiredService<SimpleFileStorage>();
+#pragma warning restore KMEXP03 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             //you can also retrieve the document from the storage
             var document = await storage.ReadFileAsync("default", docId, Path.GetFileName(bookPdf));
