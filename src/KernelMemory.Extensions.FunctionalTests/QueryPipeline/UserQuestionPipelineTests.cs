@@ -191,6 +191,30 @@ public class UserQuestionPipelineTests
         Assert.Equal(3, userQuestion.MemoryRecordPool["test1"].Count);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task UserQuestion_re_rank(int numberOfSources) 
+    {
+        //Create a mock of iReRanker
+        var mockReRanker = new Mock<IReRanker>();
+
+        var sut = new UserQuestion(GenerateOptions(), "test");
+        sut.AddReRanker(mockReRanker.Object);
+
+        //add sources
+        for (int i = 0; i < numberOfSources; i++)
+        {
+            sut.AddMemoryRecordSource($"test{i}", Array.Empty<MemoryRecord>());
+        }
+
+        await sut.GetMemoryOrdered();
+
+        //Verify no call to the reranker is done.
+        mockReRanker.Verify(x => x.ReRankAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>>>()), Times.Never);
+    }
+
     private UserQueryOptions GenerateOptions()
     {
         return new UserQueryOptions("index");

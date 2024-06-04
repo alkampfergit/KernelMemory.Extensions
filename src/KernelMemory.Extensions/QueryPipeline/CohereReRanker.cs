@@ -23,12 +23,12 @@ namespace KernelMemory.Extensions
             //Create array of citations.
             var allMemoryRecords = candidates.Values
                 .SelectMany(c => c)
-                .Distinct(new MemoryRecordEqualityComparer())
+                .Distinct(MemoryRecordEqualityComparer.Instance)
                 .ToArray();
 
             //from distinct array of citations extract text for re-ranking.
             var documents = allMemoryRecords
-                .Distinct(new MemoryRecordEqualityComparer())
+                .Distinct(MemoryRecordEqualityComparer.Instance)
                 .Select(c => c.GetPartitionText() ?? "")
                 .ToArray();
 

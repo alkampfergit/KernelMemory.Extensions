@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" />
     <PackageReference Include="CommandDotNet.Spectre" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />

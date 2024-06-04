@@ -85,13 +85,19 @@ public class UserQuestion
 
     private async Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync()
     {
-        if (MemoryRecordPool.IsEmpty)
+        var poolWithData = MemoryRecordPool
+            .Where(x => x.Value.Count != 0)
+            .Select(x => x.Value)
+            .ToArray();
+
+        if (poolWithData.Length == 0)
         {
             return [];
         }
-        if (MemoryRecordPool.Count == 1)
+
+        if (poolWithData.Length == 1)
         {
-            return [.. MemoryRecordPool.First().Value];
+            return poolWithData[0];
         }
 
         if (ReRanker == null)

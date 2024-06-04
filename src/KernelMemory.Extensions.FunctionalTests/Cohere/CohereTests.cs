@@ -1,14 +1,7 @@
-﻿using CommandDotNet.Execution;
-using KernelMemory.Extensions.Cohere;
+﻿using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryStorage;
-using Microsoft.ML.Tokenizers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions.FunctionalTests.Cohere;
 
@@ -27,7 +20,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_reranking()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?",
             ["Carson City is the capital city of the American state of Nevada.",
@@ -40,9 +33,20 @@ public class CohereReRankTests
     }
 
     [Fact]
+    public async Task Can_rerank_empty_document_list()
+    {
+        CohereConfiguration cohereConfig = CreateConfig();
+        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?", []));
+
+        Assert.NotNull(ReRankResult);
+        Assert.True(ReRankResult.Results.Count == 0);
+    }
+
+    [Fact]
     public async Task Basic_cohere_Rag_streaming()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -60,7 +64,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag()
     {
-        CohereConfiguration cohereConfig = CreatConfig();
+        CohereConfiguration cohereConfig = CreateConfig();
         var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
 
         var records = new List<MemoryRecord>();
@@ -79,14 +83,34 @@ public class CohereReRankTests
     }
 
     [Fact]
+    public async Task Basic_cohere_embed_test()
+    {
+        CohereConfiguration cohereConfig = CreateConfig();
+        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+
+        var embedRequest = new CohereEmbedRequest
+        {
+            Texts = new List<string> { "example text 1", "example text 2" },
+            Model = CohereModels.EmbedEnglishV3,
+            InputType = CohereInputTypes.Classification,
+            EmbeddingTypes = new List<string> { "float" },
+            Truncate = "END"
+        };
+
+        var embedResult = await cohereClient.EmbedAsync(embedRequest);
+        Assert.Equal(2, embedResult.Embeddings.Values.Count);
+        Assert.Equal(1024, embedResult.Embeddings.Values[0].Length);
+    }
+
+    [Fact]
     public void Tokenizer_raw_test()
     {
-        CohereTokenizer tokenizer = new (_ihttpClientFactory);
+        CohereTokenizer tokenizer = new(_ihttpClientFactory);
         var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
         Assert.Equal(8, count);
     }
 
-    private static CohereConfiguration CreatConfig()
+    private static CohereConfiguration CreateConfig()
     {
         var cohereConfig = new CohereConfiguration
         {

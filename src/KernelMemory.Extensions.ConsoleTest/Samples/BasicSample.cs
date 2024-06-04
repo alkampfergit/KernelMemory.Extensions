@@ -1,8 +1,7 @@
 ﻿using KernelMemory.Extensions.ConsoleTest.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.ContentStorage;
-using Microsoft.KernelMemory.ContentStorage.DevTools;
+using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
@@ -29,12 +28,6 @@ internal class BasicSample : ISample
         {
             await IndexDocument(kernelMemory, bookPdf, docId);
         }
-
-        var vectorDb = serviceProvider.GetRequiredService<IMemoryDb>();
-        var storage = serviceProvider.GetRequiredService<IContentStorage>();
-
-        //you can also retrieve the document from the storage
-        var document = await storage.ReadFileAsync("default", docId, Path.GetFileName(bookPdf));
 
         // now ask a question to the user continuously until the user ask an empty question
         string question;

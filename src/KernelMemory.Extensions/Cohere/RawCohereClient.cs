@@ -4,6 +4,7 @@ using Microsoft.KernelMemory.MemoryStorage;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -56,6 +57,12 @@ public class RawCohereClient
         CohereReRankRequest reRankRequest,
         CancellationToken cancellationToken = default)
     {
+        if (!reRankRequest.Answers.Any()) 
+        {
+            //Caller does not specify any answer, we have nothing to reorder.
+            return ReRankResult.Empty;
+        }
+
         var client = CreateHttpClient();
 
         var payload = new CohereReRankRequestBody()
@@ -69,8 +76,6 @@ public class RawCohereClient
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.Add("x-api-key", _apiKey);
-
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/rerank")
         {
             Content = content,
@@ -158,7 +163,6 @@ public class RawCohereClient
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.Add("x-api-key", _apiKey);
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/chat")
         {
@@ -215,6 +219,52 @@ public class RawCohereClient
             }
         }
     }
+
+public async Task<EmbedResult> EmbedAsync(
+    CohereEmbedRequest embedRequest,
+    CancellationToken cancellationToken = default)
+{
+    if (embedRequest.Texts == null || !embedRequest.Texts.Any())
+    {
+        throw new ArgumentException("Texts array cannot be null or empty", nameof(embedRequest.Texts));
+    }
+
+    var client = CreateHttpClient();
+
+    var payload = new
+    {
+        texts = embedRequest.Texts,
+        model = embedRequest.Model ?? CohereModels.EmbedEnglishV2,
+        input_type = embedRequest.InputType,
+        embedding_types = embedRequest.EmbeddingTypes,
+        truncate = embedRequest.Truncate ?? "END"
+    };
+
+    string jsonPayload = JsonSerializer.Serialize(payload);
+    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+    var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl.TrimEnd('/')}/v1/embed")
+    {
+        Content = content,
+    };
+    request.Headers.Add("Authorization", $"bearer {_apiKey}");
+
+    var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+    if (!response.IsSuccessStatusCode)
+    {
+        var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
+    }
+
+    response.EnsureSuccessStatusCode();
+    var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+Console.WriteLine(responseString    );
+    return JsonSerializer.Deserialize<EmbedResult>(responseString)!;
+}
+
 }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -502,11 +552,16 @@ public class Meta
 
 public class ReRankResult
 {
+    public static ReRankResult Empty { get; } = new ReRankResult()
+    {
+        Results = (new List<Result>()).AsReadOnly(),
+    };
+
     [JsonPropertyName("id")]
     public string Id { get; set; } = null!;
 
     [JsonPropertyName("results")]
-    public List<Result> Results { get; set; } = null!;
+    public IReadOnlyList<Result> Results { get; set; } = null!;
 
     [JsonPropertyName("meta")]
     public Meta Meta { get; set; } = null!;
@@ -560,5 +615,57 @@ public enum CohereRagResponseType
     Text = 1,
     Citations = 2,
 }
+
+public static class CohereModels
+{
+    public const string EmbedEnglishV3 = "embed-english-v3.0";
+    public const string EmbedMultilingualV3 = "embed-multilingual-v3.0";
+    public const string EmbedEnglishLightV3 = "embed-english-light-v3.0";
+    public const string EmbedMultilingualLightV3 = "embed-multilingual-light-v3.0";
+    public const string EmbedEnglishV2 = "embed-english-v2.0";
+    public const string EmbedEnglishLightV2 = "embed-english-light-v2.0";
+    public const string EmbedMultilingualV2 = "embed-multilingual-v2.0";
+}
+
+public class CohereEmbedRequest
+{
+    public IEnumerable<string> Texts { get; set; }
+    public string Model { get; set; }
+    public string InputType { get; set; }
+    public IEnumerable<string> EmbeddingTypes { get; set; }
+    public string Truncate { get; set; }
+}
+
+public static class CohereInputTypes
+{
+    public const string SearchDocument = "search_document";
+    public const string SearchQuery = "search_query";
+    public const string Classification = "classification";
+    public const string Clustering = "clustering";
+}
+public class EmbedResult
+{
+    [JsonPropertyName("responseType")]
+    public string ResponseType { get; set; }
+    
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+    
+    [JsonPropertyName("embeddings")]
+    public Embeddings Embeddings { get; set; }
+    
+    [JsonPropertyName("texts")]
+    public List<string> Texts { get; set; }
+    
+    [JsonPropertyName("meta")]
+    public Meta Meta { get; set; }
+}
+
+public class Embeddings
+ {
+    [JsonPropertyName("float")]
+    public List<float[]> Values { get; set; }
+}
+
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

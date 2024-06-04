@@ -26,7 +26,12 @@ public class CohereCommandRQueryExecutorConfiguration
     /// https://storage.googleapis.com/cohere-public/tokenizers/command-r-plus.json
     /// </para>
     /// </summary>
-    public int MaxMemoryRecord { get; set; }
+    public int MaxMemoryRecord { get; set; } = 5;
+
+    /// <summary>
+    /// Temperature used to perform RAG query.
+    /// </summary>
+    public float Temperature { get; set; } = 0.0f;
 }
 
 public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
@@ -62,7 +67,7 @@ public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
 
         //ok simply create the request to pass to cohere chat request.
         var cohereRagRequest = CohereRagRequest.CreateFromMemoryRecord(userQuestion.Question, usableMemoryRecords);
-
+        cohereRagRequest.Temperature = _config.Temperature;
         var asiterator = _rawCohereClient.RagQueryStreamingAsync(cohereRagRequest);
 
         //ok we need to update citations.

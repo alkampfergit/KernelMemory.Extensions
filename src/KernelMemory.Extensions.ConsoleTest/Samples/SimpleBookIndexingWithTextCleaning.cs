@@ -1,8 +1,8 @@
 ﻿using KernelMemory.Extensions.ConsoleTest.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.ContentStorage.DevTools;
 using Microsoft.KernelMemory.DataFormats;
+using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.Handlers;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
