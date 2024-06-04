@@ -7,8 +7,7 @@ using KernelMemory.Extensions.QueryPipeline.Diagnostic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
-using Microsoft.KernelMemory.ContentStorage;
-using Microsoft.KernelMemory.ContentStorage.DevTools;
+using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
@@ -57,7 +56,7 @@ internal class CustomSearchPipelineBase : ISample2
         await ManageIndexingOfDocuments(kernelMemory);
 
         var vectorDb = serviceProvider.GetRequiredService<IMemoryDb>();
-        var storage = serviceProvider.GetRequiredService<IContentStorage>();
+        var storage = serviceProvider.GetRequiredService<SimpleFileStorageConfig>();
 
         var textGenerator = serviceProvider.GetRequiredService<ITextGenerator>();
         var searchClientConfig = serviceProvider.GetService<SearchClientConfig>();
