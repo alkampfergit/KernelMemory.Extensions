@@ -32,6 +32,13 @@ public class CohereCommandRQueryExecutorConfiguration
     /// Temperature used to perform RAG query.
     /// </summary>
     public float Temperature { get; set; } = 0.0f;
+
+    /// <summary>
+    /// If we have no citations, we can tell that we do not have an answer
+    /// because if no document is pertinent, we should ground the answer
+    /// and avoid allucination. We can change this behavior with this settings.
+    /// </summary>
+    public bool RemoveAnswerIfNoCitations { get; set; } = true;
 }
 
 public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
@@ -117,5 +124,12 @@ public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
 
         // now we need to clean up the citations, including only the one used to answer the question
         userQuestion.Citations = MemoryRecordHelper.BuildCitations(usedMemoryRecord, userQuestion.UserQueryOptions.Index, this._log);
+
+        // ground if needed
+        if (_config.RemoveAnswerIfNoCitations && extCitations.Count == 0)
+        {
+            //no answer is possible, because we do not have citations.
+            userQuestion.Answer = "";
+        }
     }
 }
