@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using KernelMemory.Extensions.Helper;
+using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryStorage;
 using System;
@@ -72,7 +73,7 @@ public class RawCohereClient
             Documents = reRankRequest.Answers,
             TopN = reRankRequest.Answers.Length,
         };
-        string jsonPayload = JsonSerializer.Serialize(payload);
+        string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(payload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -116,7 +117,7 @@ public class RawCohereClient
 
         var client = CreateHttpClient();
 
-        string jsonPayload = JsonSerializer.Serialize(cohereRagRequest);
+        string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(cohereRagRequest);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -159,7 +160,7 @@ public class RawCohereClient
         //force streaming
         cohereRagRequest.Stream = true;
 
-        string jsonPayload = JsonSerializer.Serialize(cohereRagRequest);
+        string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(cohereRagRequest);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -240,7 +241,7 @@ public async Task<EmbedResult> EmbedAsync(
         truncate = embedRequest.Truncate ?? "END"
     };
 
-    string jsonPayload = JsonSerializer.Serialize(payload);
+    string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(payload);
     var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
     content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");

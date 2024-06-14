@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KernelMemory.Extensions.Helper;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -56,7 +57,7 @@ public class RawAnthropicClient
             }
         };
 
-        string jsonPayload = JsonSerializer.Serialize(requestPayload);
+        string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
         content.Headers.Add("x-api-key", _apiKey);
@@ -144,7 +145,7 @@ public class RawAnthropicClient
             }
         };
 
-        string jsonPayload = JsonSerializer.Serialize(requestPayload);
+        string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
         content.Headers.Add("x-api-key", _apiKey);
