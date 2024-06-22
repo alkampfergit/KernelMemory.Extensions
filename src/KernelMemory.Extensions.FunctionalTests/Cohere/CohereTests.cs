@@ -1,4 +1,5 @@
-﻿using KernelMemory.Extensions.Cohere;
+﻿using Fasterflect;
+using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryStorage;
@@ -108,6 +109,60 @@ public class CohereReRankTests
         CohereTokenizer tokenizer = new(_ihttpClientFactory);
         var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
         Assert.Equal(8, count);
+    }
+
+    /// <summary>
+    /// In azure ai studio we do not still have re-ranking, so we need to use re-ranker with a configuration
+    /// and the executor with another configuration
+    /// </summary>
+    [Fact]
+    public void Ability_to_use_azure()
+    {
+        var configReRank = new CohereConfiguration()
+        {
+            ApiKey = "Base Api Key",
+        };
+        var configRagExecutor = new CohereConfiguration()
+        {
+            ApiKey = "Azure configuration",
+            BaseUrl  = "https://api.azure.cohere.ai/",
+        };
+
+        var services = new ServiceCollection();
+        services.AddHttpClient();
+        services.AddKeyedSingleton<CohereConfiguration>("rerank", configReRank);
+        services.AddKeyedSingleton<CohereConfiguration>("executor", configRagExecutor);
+
+        services.AddKeyedSingleton<RawCohereClient>("rerank", (sp, key) => 
+        {
+            var options = sp.GetKeyedService<CohereConfiguration>(key);
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            return new RawCohereClient(options, httpClientFactory);
+        });
+        services.AddKeyedSingleton<RawCohereClient>("executor", (sp, key) =>
+        {
+            var options = sp.GetKeyedService<CohereConfiguration>(key);
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            return new RawCohereClient(options, httpClientFactory);
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+        var cohereConfigurationReRank = serviceProvider.GetKeyedService<CohereConfiguration>("rerank");
+        var cohereConfigurationExecutor = serviceProvider.GetKeyedService<CohereConfiguration>("executor");
+
+        var cohereClientReRank = serviceProvider.GetKeyedService<RawCohereClient>("rerank");
+        var cohereClientExecutor = serviceProvider.GetKeyedService<RawCohereClient>("executor");
+
+        //Base assertion, you can simply get by key
+        Assert.Equal("Azure configuration", cohereConfigurationExecutor.ApiKey);
+        Assert.Equal("https://api.azure.cohere.ai/", cohereConfigurationExecutor.BaseUrl);
+
+        Assert.Equal("https://api.cohere.ai/", cohereConfigurationReRank.BaseUrl);
+        Assert.Equal("Base Api Key", cohereConfigurationReRank.ApiKey);
+   
+        //now verify the two clients
+        Assert.Equal(cohereClientReRank.GetFieldValue("_apiKey"), cohereConfigurationReRank.ApiKey);
+
     }
 
     private static CohereConfiguration CreateConfig()
