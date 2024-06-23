@@ -16,11 +16,11 @@ public static class Dotenv
 
     private static void LoadEnvFile()
     {
-        string envFilePath = FindEnvFile();
+        string? envFilePath = FindEnvFile();
         if (envFilePath != null)
         {
             string[] lines = File.ReadAllLines(envFilePath);
-            foreach (string line in lines)
+            foreach (var line in lines)
             {
                 if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("#"))
                 {
@@ -36,9 +36,9 @@ public static class Dotenv
         }
     }
 
-    private static string FindEnvFile()
+    private static string? FindEnvFile()
     {
-        string currentDirectory = Directory.GetCurrentDirectory();
+        string? currentDirectory = Directory.GetCurrentDirectory();
         while (currentDirectory != null)
         {
             string envFilePath = Path.Combine(currentDirectory, ".env");
@@ -51,7 +51,7 @@ public static class Dotenv
         return null;
     }
 
-    public static string Get(string key)
+    public static string? Get(string key)
     {
         if (envVariables.ContainsKey(key))
         {
@@ -60,4 +60,3 @@ public static class Dotenv
         return null;
     }
 }
-

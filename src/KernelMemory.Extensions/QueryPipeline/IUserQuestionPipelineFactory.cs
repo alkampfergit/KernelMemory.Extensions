@@ -42,11 +42,10 @@ namespace KernelMemory.Extensions.QueryPipeline
             var pipeline = new UserQuestionPipeline();
 
             //we need to get the configuration
-            var uqpc = _serviceProvider.GetRequiredKeyedService<UserQuestionPipelineConfiguration>(pipelineName ?? IUserQuestionPipelineFactory.DefaultPipelineName);
-            if (uqpc == null)
-            {
-                throw new InvalidOperationException($"No configuration found for pipeline {pipelineName}");
-            }
+            var uqpc = _serviceProvider.GetRequiredKeyedService<UserQuestionPipelineConfiguration>(pipelineName
+                ?? IUserQuestionPipelineFactory.DefaultPipelineName)
+                ?? throw new InvalidOperationException($"No configuration found for pipeline {pipelineName}");
+
             foreach (var handlerConfig in uqpc.Handlers)
             {
                 //resolve the handler and add to the pipeline
@@ -67,6 +66,11 @@ namespace KernelMemory.Extensions.QueryPipeline
                 pipeline.SetReRanker((IReRanker)_serviceProvider.GetRequiredService(uqpc.ReRanker));
             }
 
+            if (uqpc.QueryRewriter != null)
+            {
+                pipeline.SetConversationQueryRewriter((IConversationQueryRewriter)_serviceProvider.GetRequiredService(uqpc.QueryRewriter));
+            }
+
             return pipeline;
         }
     }
@@ -80,13 +84,21 @@ namespace KernelMemory.Extensions.QueryPipeline
 
         public string Name { get; private set; }
 
-        public List<HandlerConfig> Handlers { get; private set; } = new();
+        public List<HandlerConfig> Handlers { get; } = [];
 
         public Type? ReRanker { get; set; }
+
+        public Type? QueryRewriter { get; set; }
 
         public UserQuestionPipelineConfiguration SetReRanker<T>() where T : IReRanker
         {
             ReRanker = typeof(T);
+            return this;
+        }
+
+        public UserQuestionPipelineConfiguration SetQueryRewriter<T>() where T : IConversationQueryRewriter
+        {
+            QueryRewriter = typeof(T);
             return this;
         }
 

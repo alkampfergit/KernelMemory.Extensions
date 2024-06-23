@@ -1,9 +1,11 @@
 ﻿using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions;
@@ -17,7 +19,9 @@ public class UserQuestion
     internal IReRanker? ReRanker { get; set; }
 
     /// <summary>
-    /// Add current re-ranker used to re-rank the results.
+    /// Add current re-ranker used to re-rank the results. TODO: understand if this is 
+    /// the real place where we want to re-rank results, a better place is the <see cref="UserQuestionPipeline"/>
+    /// but it is convenient for now to keep into the UserQuestion.
     /// </summary>
     /// <param name="reRanker"></param>
     internal void AddReRanker(IReRanker reRanker)
@@ -27,7 +31,7 @@ public class UserQuestion
 
     public UserQueryOptions UserQueryOptions { get; }
 
-    public string Question { get; }
+    public string Question { get; private set; }
 
     /// <summary>
     /// Optional list of filter to perform the query.
@@ -130,6 +134,69 @@ public class UserQuestion
         Filters = filters;
         ExpandedQuestions = [];
     }
+
+    #region Conversation
+
+    /// <summary>
+    /// If different from null it contains a previous conversation, this is needed
+    /// to perform a correct search in the context of this conversation
+    /// </summary>
+    public Conversation? Conversation { get; private set; }
+
+    private void AddToConversation(Conversation conversation)
+    {
+        if (Conversation != null)
+        {
+            Conversation.AddQuestions(conversation.GetQuestions());
+        }
+        else
+        {
+            Conversation = conversation;
+        }
+    }
+
+    /// <summary>
+    /// Add current question and answer to the current conversation and 
+    /// place a new question
+    /// </summary>
+    /// <param name="newQuestion"></param>
+    public void ContinueConversation(string newQuestion)
+    {
+        if (Conversation == null)
+        {
+            Conversation = new Conversation();
+        }
+
+        if (Answered)
+        {
+            Conversation.AddQuestion(Question, Answer!);
+        }
+        else
+        {
+            Conversation.AddUnansweredQuestion(Question);
+        }
+
+        Answer = null;
+        Question = newQuestion;
+        Citations = null;
+        ExtendedCitation = null;
+    }
+
+    /// <summary>
+    /// Set a previous conversation saved somewhere.
+    /// </summary>
+    /// <param name="conversation"></param>
+    public void SetConversation(Conversation conversation)
+    {
+        Conversation = conversation;
+    }
+
+    public void RewriteQuestion(string newQuestion) 
+    {
+        Question = newQuestion;
+    }
+
+    #endregion
 }
 
 public class UserQueryOptions

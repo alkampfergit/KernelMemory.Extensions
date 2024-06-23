@@ -41,7 +41,7 @@ public class UserQuestionPipelineTests
 
         //now I need to assert that extended question was added
         Assert.Single(userQuestion.ExpandedQuestions);
-        Assert.Equal("expanded question", userQuestion.ExpandedQuestions.First().Text);
+        Assert.Equal("expanded question", userQuestion.ExpandedQuestions[0].Text);
     }
 
     [Fact]
@@ -120,9 +120,13 @@ public class UserQuestionPipelineTests
         var userQuestion = new UserQuestion(GenerateOptions(), "test question");
         await sut.ExecuteQuery(userQuestion);
 
+        Assert.NotNull(userQuestion);
         Assert.Null(userQuestion.Answer);
+
         //Verify that we have extracted memories
+        Assert.NotNull(userQuestion.Citations);
         Assert.Single(userQuestion.Citations);
+
         var citation = userQuestion.Citations.First();
         Assert.Equal("pieceoftext", citation.Partitions.Single().Text);
         Assert.Equal("Document_1", citation.DocumentId);
@@ -159,6 +163,55 @@ public class UserQuestionPipelineTests
         //We have no result because the pipeline went in error
         Assert.True(userQuestion.Answered);
         Assert.NotNull(userQuestion.Citations);
+    }
+
+    [Fact]
+    public async Task Basic_conversation_handling()
+    {
+        var sut = GenerateSut();
+        sut.AddHandler(new BaseAnswerSimulator());
+
+        //Generate mock for conversation rewriter
+        var conversationRewriterMock = new Mock<IConversationQueryRewriter>();
+        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>()))
+            .Returns(Task.FromResult("New rewritten question"));
+        sut.SetConversationQueryRewriter(conversationRewriterMock.Object);
+
+        var userQuestion = new UserQuestion(GenerateOptions(), "test question");
+        var conversation = new Conversation();
+        conversation.AddQuestion("Color of sky", "green");
+        userQuestion.SetConversation(conversation);
+
+        //Act: execute query we need to rewrite the query
+        await sut.ExecuteQuery(userQuestion);
+
+        //Assert: query was rewritten
+        Assert.Equal("New rewritten question", userQuestion.Question);
+    }
+
+    [Fact]
+    public async Task Basic_conversation_handling_async()
+    {
+        var sut = GenerateSut();
+        sut.AddHandler(new BaseAnswerSimulator());
+
+        //Generate mock for conversation rewriter
+        var conversationRewriterMock = new Mock<IConversationQueryRewriter>();
+        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>()))
+            .Returns(Task.FromResult("New rewritten question"));
+        sut.SetConversationQueryRewriter(conversationRewriterMock.Object);
+
+        var userQuestion = new UserQuestion(GenerateOptions(), "test question");
+        var conversation = new Conversation();
+        conversation.AddQuestion("Color of sky", "green");
+        userQuestion.SetConversation(conversation);
+
+        //Act: execute query we need to rewrite the query
+        var result = sut.ExecuteQueryAsync(userQuestion);
+        await result.ToListAsync();
+
+        //Assert: query was rewritten
+        Assert.Equal("New rewritten question", userQuestion.Question);
     }
 
     /// <summary>
@@ -206,7 +259,7 @@ public class UserQuestionPipelineTests
         //add sources
         for (int i = 0; i < numberOfSources; i++)
         {
-            sut.AddMemoryRecordSource($"test{i}", Array.Empty<MemoryRecord>());
+            sut.AddMemoryRecordSource($"test{i}", []);
         }
 
         await sut.GetMemoryOrdered();

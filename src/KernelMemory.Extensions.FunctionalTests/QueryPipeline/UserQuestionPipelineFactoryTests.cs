@@ -90,6 +90,7 @@ public class UserQuestionPipelineFactoryTests
         ServiceCollection serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton<StandardVectorSearchQueryHandler>();
         serviceCollection.AddSingleton<TestReRanker>();
+        serviceCollection.AddSingleton<TestQueryRewriter>();
 
         var mdb = new Mock<IMemoryDb>();
         serviceCollection.AddSingleton(mdb.Object);
@@ -98,7 +99,8 @@ public class UserQuestionPipelineFactoryTests
         {
             config
                 .AddHandler<StandardVectorSearchQueryHandler>()
-                .SetReRanker<TestReRanker>();
+                .SetReRanker<TestReRanker>()
+                .SetQueryRewriter<TestQueryRewriter>();
         });
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -111,6 +113,9 @@ public class UserQuestionPipelineFactoryTests
         Assert.NotNull(pipeline);
         //white box testing, getting private field with fasterflect
         Assert.IsType<TestReRanker>(pipeline.GetFieldValue("_reRanker"));
+
+        //white box testing, getting private field with fasterflect
+        Assert.IsType<TestQueryRewriter>(pipeline.GetFieldValue("_conversationQueryRewriter"));
     }
 
     [Fact]
@@ -147,6 +152,14 @@ public class UserQuestionPipelineFactoryTests
         public Task<IReadOnlyCollection<MemoryRecord>> ReRankAsync(string question, IReadOnlyDictionary<string, IReadOnlyCollection<MemoryRecord>> candidates)
         {
            return Task.FromResult<IReadOnlyCollection<MemoryRecord>>(candidates.SelectMany(c => c.Value).ToArray());
+        }
+    }
+
+    private class TestQueryRewriter : IConversationQueryRewriter
+    {
+        public Task<string> RewriteAsync(Conversation conversation, string question)
+        {
+            return Task.FromResult(question);
         }
     }
 
