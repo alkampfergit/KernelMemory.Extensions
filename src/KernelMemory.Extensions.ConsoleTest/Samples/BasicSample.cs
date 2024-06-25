@@ -1,5 +1,6 @@
 ﻿using KernelMemory.Extensions.ConsoleTest.Helper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
@@ -13,6 +14,13 @@ internal class BasicSample : ISample
     public async Task RunSample(string bookPdf)
     {
         var services = new ServiceCollection();
+
+        services.AddLogging(l => l
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddConsole()
+            .AddDebug()
+        );
+
         var builder = CreateBasicKernelMemoryBuilder(services, useMongoDbAtlas: false);
 
         var kernelMemory = builder.Build<MemoryServerless>();

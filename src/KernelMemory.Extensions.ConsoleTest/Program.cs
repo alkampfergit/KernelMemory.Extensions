@@ -28,7 +28,7 @@ public static class Program
         // Ask for the user's favorite fruits
         var choices = new Dictionary<string, Type?>
         {
-            ["Basic Sample"] = typeof(SimpleBookIndexingWithTextCleaning),
+            ["Basic Sample"] = typeof(BasicSample),
             ["Custom Pipeline (text cleaner)"] = typeof(SimpleBookIndexingWithTextCleaning),
             ["SBert in action"] = typeof(SBertSample),
             ["Custom Search pipeline (Basic)"] = typeof(CustomSearchPipelineBase),
