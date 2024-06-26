@@ -18,6 +18,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Yaml" Version="1.13.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Abstractions" Version="1.13.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.13.0" />
+    <PackageVersion Include="Polly.Core" Version="8.4.0" />
     <PackageVersion Include="TiktokenSharp" Version="1.1.4" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>

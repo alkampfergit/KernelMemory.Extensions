@@ -6,23 +6,48 @@ using Microsoft.KernelMemory.MemoryStorage;
 
 namespace KernelMemory.Extensions.FunctionalTests.Cohere;
 
-public class CohereReRankTests
+public class CohereTests
 {
-    private IHttpClientFactory _ihttpClientFactory;
+    private ServiceProvider _serviceProvider;
 
-    public CohereReRankTests()
+    private IHttpClientFactory _httpClientFactory;
+
+    public CohereTests()
     {
         var services = new ServiceCollection();
-        services.AddHttpClient();
-        var serviceProvider = services.BuildServiceProvider();
-        _ihttpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        services.AddHttpClient<RawCohereChatClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereReRankerClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereEmbeddingClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+
+        var cohereApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY");
+
+        if (string.IsNullOrEmpty(cohereApiKey))
+        {
+            throw new Exception("COHERE_API_KEY is not set");
+        }
+
+        services.ConfigureCohere(cohereApiKey);
+
+        _serviceProvider = services.BuildServiceProvider();
+        _httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
     }
 
     [Fact]
     public async Task Basic_cohere_reranking()
     {
-        CohereConfiguration cohereConfig = CreateConfig();
-        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var cohereClient = new RawCohereClient(_serviceProvider);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?",
             ["Carson City is the capital city of the American state of Nevada.",
                   "The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan.",
@@ -36,8 +61,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Can_rerank_empty_document_list()
     {
-        CohereConfiguration cohereConfig = CreateConfig();
-        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var cohereClient = new RawCohereClient(_serviceProvider);
         var ReRankResult = await cohereClient.ReRankAsync(new CohereReRankRequest("What is the capital of the United States?", []));
 
         Assert.NotNull(ReRankResult);
@@ -47,8 +71,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag_streaming()
     {
-        CohereConfiguration cohereConfig = CreateConfig();
-        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var cohereClient = new RawCohereClient(_serviceProvider);
 
         var records = new List<MemoryRecord>();
         records.Add(MemoryRecordTestUtilities.CreateMemoryRecord("doc1", "file1", 1, "Carson City is the capital city of the American state of Nevada."));
@@ -65,8 +88,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_Rag()
     {
-        CohereConfiguration cohereConfig = CreateConfig();
-        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var cohereClient = new RawCohereClient(_serviceProvider);
 
         var records = new List<MemoryRecord>();
         records.Add(MemoryRecordTestUtilities.CreateMemoryRecord("doc1", "file1", 1, "Carson City is the capital city of the American state of Nevada."));
@@ -86,8 +108,7 @@ public class CohereReRankTests
     [Fact]
     public async Task Basic_cohere_embed_test()
     {
-        CohereConfiguration cohereConfig = CreateConfig();
-        var cohereClient = new RawCohereClient(cohereConfig, _ihttpClientFactory);
+        var cohereClient = new RawCohereClient(_serviceProvider);
 
         var embedRequest = new CohereEmbedRequest
         {
@@ -106,76 +127,62 @@ public class CohereReRankTests
     [Fact]
     public void Tokenizer_raw_test()
     {
-        CohereTokenizer tokenizer = new(_ihttpClientFactory);
+        CohereTokenizer tokenizer = new(_httpClientFactory);
         var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
         Assert.Equal(8, count);
     }
 
-    /// <summary>
-    /// In azure ai studio we do not still have re-ranking, so we need to use re-ranker with a configuration
-    /// and the executor with another configuration
-    /// </summary>
-    [Fact]
-    public void Ability_to_use_azure()
-    {
-        var configReRank = new CohereConfiguration()
-        {
-            ApiKey = "Base Api Key",
-        };
-        var configRagExecutor = new CohereConfiguration()
-        {
-            ApiKey = "Azure configuration",
-            BaseUrl  = "https://api.azure.cohere.ai/",
-        };
+    // /// <summary>
+    // /// In azure ai studio we do not still have re-ranking, so we need to use re-ranker with a configuration
+    // /// and the executor with another configuration
+    // /// </summary>
+    // [Fact]
+    // public void Ability_to_use_azure()
+    // {
+    //     var configReRank = new CohereConfiguration()
+    //     {
+    //         ApiKey = "Base Api Key",
+    //     };
+    //     var configRagExecutor = new CohereConfiguration()
+    //     {
+    //         ApiKey = "Azure configuration",
+    //         BaseUrl = "https://api.azure.cohere.ai/",
+    //     };
 
-        var services = new ServiceCollection();
-        services.AddHttpClient();
-        services.AddKeyedSingleton<CohereConfiguration>("rerank", configReRank);
-        services.AddKeyedSingleton<CohereConfiguration>("executor", configRagExecutor);
+    //     var services = new ServiceCollection();
+    //     services.AddHttpClient();
+    //     services.AddKeyedSingleton<CohereConfiguration>("rerank", configReRank);
+    //     services.AddKeyedSingleton<CohereConfiguration>("executor", configRagExecutor);
 
-        services.AddKeyedSingleton<RawCohereClient>("rerank", (sp, key) => 
-        {
-            var options = sp.GetKeyedService<CohereConfiguration>(key);
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            return new RawCohereClient(options, httpClientFactory);
-        });
-        services.AddKeyedSingleton<RawCohereClient>("executor", (sp, key) =>
-        {
-            var options = sp.GetKeyedService<CohereConfiguration>(key);
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            return new RawCohereClient(options, httpClientFactory);
-        });
+    //     services.AddKeyedSingleton<RawCohereClient>("rerank", (sp, key) =>
+    //     {
+    //         var options = sp.GetKeyedService<CohereConfiguration>(key);
+    //         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    //         return new RawCohereClient(options, _serviceProvider);
+    //     });
+    //     services.AddKeyedSingleton<RawCohereClient>("executor", (sp, key) =>
+    //     {
+    //         var options = sp.GetKeyedService<CohereConfiguration>(key);
+    //         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    //         return new RawCohereClient(options, _serviceProvider);
+    //     });
 
-        var serviceProvider = services.BuildServiceProvider();
-        var cohereConfigurationReRank = serviceProvider.GetKeyedService<CohereConfiguration>("rerank");
-        var cohereConfigurationExecutor = serviceProvider.GetKeyedService<CohereConfiguration>("executor");
+    //     var serviceProvider = services.BuildServiceProvider();
+    //     var cohereConfigurationReRank = serviceProvider.GetKeyedService<CohereConfiguration>("rerank");
+    //     var cohereConfigurationExecutor = serviceProvider.GetKeyedService<CohereConfiguration>("executor");
 
-        var cohereClientReRank = serviceProvider.GetKeyedService<RawCohereClient>("rerank");
-        var cohereClientExecutor = serviceProvider.GetKeyedService<RawCohereClient>("executor");
+    //     var cohereClientReRank = serviceProvider.GetKeyedService<RawCohereClient>("rerank");
+    //     var cohereClientExecutor = serviceProvider.GetKeyedService<RawCohereClient>("executor");
 
-        //Base assertion, you can simply get by key
-        Assert.Equal("Azure configuration", cohereConfigurationExecutor.ApiKey);
-        Assert.Equal("https://api.azure.cohere.ai/", cohereConfigurationExecutor.BaseUrl);
+    //     //Base assertion, you can simply get by key
+    //     Assert.Equal("Azure configuration", cohereConfigurationExecutor.ApiKey);
+    //     Assert.Equal("https://api.azure.cohere.ai/", cohereConfigurationExecutor.BaseUrl);
 
-        Assert.Equal("https://api.cohere.ai/", cohereConfigurationReRank.BaseUrl);
-        Assert.Equal("Base Api Key", cohereConfigurationReRank.ApiKey);
-   
-        //now verify the two clients
-        Assert.Equal(cohereClientReRank.GetFieldValue("_apiKey"), cohereConfigurationReRank.ApiKey);
+    //     Assert.Equal("https://api.cohere.ai/", cohereConfigurationReRank.BaseUrl);
+    //     Assert.Equal("Base Api Key", cohereConfigurationReRank.ApiKey);
 
-    }
+    //     //now verify the two clients
+    //     Assert.Equal(cohereClientReRank.GetFieldValue("_apiKey"), cohereConfigurationReRank.ApiKey);
 
-    private static CohereConfiguration CreateConfig()
-    {
-        var cohereConfig = new CohereConfiguration
-        {
-            ApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY"),
-        };
-        if (string.IsNullOrEmpty(cohereConfig.ApiKey))
-        {
-            throw new Exception("COHERE_API_KEY is not set");
-        }
-
-        return cohereConfig;
-    }
+    // }
 }

@@ -27,13 +27,28 @@ internal class CustomSearchPipelineBase : ISample2
     {
         var services = new ServiceCollection();
 
-        CohereConfiguration cohereConfiguration = new CohereConfiguration();
-        cohereConfiguration.ApiKey = Dotenv.Get("COHERE_API_KEY");
+        var apiKey = Dotenv.Get("COHERE_API_KEY")!;
+        services.ConfigureCohere(apiKey);
+        
+        services.AddHttpClient<RawCohereChatClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereReRankerClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereEmbeddingClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
 
         CohereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
         coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 10;
 
-        services.AddSingleton(cohereConfiguration);
         services.AddSingleton(coereCommandRagQueryExecutorConfiguration);
         services.AddSingleton<RawCohereClient>();
         services.AddSingleton<CohereCommandRQueryExecutor>();
