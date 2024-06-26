@@ -27,13 +27,46 @@ internal class CustomSearchPipelineBase : ISample2
     {
         var services = new ServiceCollection();
 
-        CohereConfiguration cohereConfiguration = new CohereConfiguration();
-        cohereConfiguration.ApiKey = Dotenv.Get("COHERE_API_KEY");
+        var apiKey = Dotenv.Get("COHERE_API_KEY")!;
+        var cohereBaseUrl = Dotenv.Get("COHERE_BASE_API_KEY");
+        if (string.IsNullOrEmpty(cohereBaseUrl))
+        {
+            services.ConfigureCohereChat(apiKey);
+        }
+        else
+        {
+            services.ConfigureCohereChat(apiKey, cohereBaseUrl);
+        }
+        //verify if rerank has a different api key (because the apikey point on azure ai studio)
+        var rerankApiKey = Dotenv.Get("COHERE_RERANK_API_KEY");
+        if (string.IsNullOrEmpty(rerankApiKey))
+        {
+            services.ConfigureCohereRerank(apiKey);
+        }
+        else
+        {
+            services.ConfigureCohereRerank(rerankApiKey);
+        }
+        
+        services.AddHttpClient<RawCohereChatClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereReRankerClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
+        services.AddHttpClient<RawCohereEmbeddingClient>()
+            .AddStandardResilienceHandler(options =>
+            {
+                // Configure standard resilience options here
+            });
 
         CohereCommandRQueryExecutorConfiguration coereCommandRagQueryExecutorConfiguration = new();
         coereCommandRagQueryExecutorConfiguration.MaxMemoryRecord = 10;
 
-        services.AddSingleton(cohereConfiguration);
         services.AddSingleton(coereCommandRagQueryExecutorConfiguration);
         services.AddSingleton<RawCohereClient>();
         services.AddSingleton<CohereCommandRQueryExecutor>();
