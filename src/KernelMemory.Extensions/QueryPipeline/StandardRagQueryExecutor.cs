@@ -150,7 +150,6 @@ namespace KernelMemory.Extensions
             var options = new TextGenerationOptions
             {
                 Temperature = this._config.Temperature,
-                TopP = this._config.TopP,
                 PresencePenalty = this._config.PresencePenalty,
                 FrequencyPenalty = this._config.FrequencyPenalty,
                 MaxTokens = this._config.AnswerTokens,

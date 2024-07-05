@@ -1,5 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions.QueryPipeline;
@@ -66,14 +68,80 @@ question {question}";
 
         return result?.ToString() ?? question;
     }
+}
 
-    /// <summary>
-    /// Allows some parametrization of the rewriter.
-    /// </summary>
-    public class SemanticKernelQueryRewriterOptions
+/// <summary>
+/// Allows some parametrization of the rewriter.
+/// </summary>
+public class SemanticKernelQueryRewriterOptions
+{
+    public string? ModelId { get; set; }
+
+    public float Temperature { get; set; } = 0.0f;
+}
+
+public class HandlebarSemanticKernelQueryRewriter : IConversationQueryRewriter
+{
+    private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
+    private readonly Kernel _kernel;
+    private readonly KernelFunction _chatFunction;
+
+    public HandlebarSemanticKernelQueryRewriter(
+        SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
+        Kernel kernel)
     {
-        public string? ModelId { get; set; }
+        _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
+        _kernel = kernel;
 
-        public float Temperature { get; set; } = 0.0f;
+        // Create a template for chat with settings
+        _chatFunction = kernel.CreateFunctionFromPrompt(new PromptTemplateConfig()
+        {
+            Name = "TestRewrite",
+            Description = "Rewrite a query for kernel memory.",
+            Template = @"system: 
+* Given the following conversation history and the users next question,rephrase the question to be a stand alone question.
+If the conversation is irrelevant or empty, just restate the original question.
+Do not add more details than necessary to the question.
+
+chat history: 
+{{#each history}}
+question: 
+{{question}}
+answer: 
+{{answer}}
+{{/each}}
+
+Follow up Input: {{ chat_input }} 
+Standalone Question:",
+            TemplateFormat = "handlebars",
+            InputVariables =
+            [
+                new() { Name = "chat_input", Description = "New question of the user", IsRequired = false, Default = "" },
+                new() { Name = "history", Description = "The history of the RAG CHAT.", IsRequired = true }
+            ],
+            ExecutionSettings =
+            {
+                { "default", new OpenAIPromptExecutionSettings()
+                    {
+                        MaxTokens = 1000,
+                        Temperature = 0,
+                        ModelId = "gpt35",
+                    }
+                },
+            }
+        },
+        promptTemplateFactory: new HandlebarsPromptTemplateFactory());
+    }
+
+    public async Task<string> RewriteAsync(Conversation conversation, string question)
+    {
+        KernelArguments ka = new();
+        ka["chat_input"] = question;
+
+        ka["history"] = conversation.GetQuestions();
+
+        var result = await _kernel.InvokeAsync(_chatFunction, ka);
+
+        return result?.ToString() ?? question;
     }
 }

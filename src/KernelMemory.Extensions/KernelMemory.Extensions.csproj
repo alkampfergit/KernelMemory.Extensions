@@ -67,4 +67,8 @@
     <ProjectReference Include="..\KernelMemory.Extensions.Interfaces\KernelMemory.Extensions.Interfaces.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="QueryPipeline\data\" />
+  </ItemGroup>
+
 </Project>

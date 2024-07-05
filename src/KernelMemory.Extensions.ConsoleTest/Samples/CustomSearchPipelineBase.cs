@@ -15,7 +15,6 @@ using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using Microsoft.KernelMemory.Prompts;
 using Microsoft.SemanticKernel;
 using Spectre.Console;
-using static KernelMemory.Extensions.QueryPipeline.SemanticKernelQueryRewriter;
 
 namespace SemanticMemory.Samples;
 
@@ -82,11 +81,16 @@ internal class CustomSearchPipelineBase : ISample2
             .Title("Select the query executor to use")
             .AddChoices(["KernelMemory Default", "Cohere CommandR+"]));
 
+        var queryRewriterTool = AnsiConsole.Prompt(new SelectionPrompt<string>()
+            .Title("Select query rewriter")
+            .AddChoices(["Semantic Kernel Base", "Semantic Kernel Handlebar"]));
+
         var kernelBuider = CreateBasicKernelBuilder();
         var builder = CreateBasicKernelMemoryBuilder(
             services,
             storageToUse == "elasticsearch",
-            queryExecutorToUse == "Cohere CommandR+");
+            queryExecutorToUse == "Cohere CommandR+",
+            queryRewriterTool == "Semantic Kernel Handlebar");
         var kernelMemory = builder.Build<MemoryServerless>();
         var kernel = kernelBuider.Build();
 
@@ -221,7 +225,8 @@ internal class CustomSearchPipelineBase : ISample2
     private static IKernelMemoryBuilder CreateBasicKernelMemoryBuilder(
         ServiceCollection services,
         bool useElasticSearch,
-        bool useCohereCommandRPlusForQueryExecutor)
+        bool useCohereCommandRPlusForQueryExecutor,
+        bool useHandlebarQueryRewriter)
     {
         // we need a series of services to use Kernel Memory, the first one is
         // an embedding service that will be used to create dense vector for
@@ -283,6 +288,7 @@ internal class CustomSearchPipelineBase : ISample2
 
         services.AddSingleton<IKernelMemoryBuilder>(kernelMemoryBuilder);
         services.AddSingleton<CohereReRanker>();
+        services.AddSingleton<HandlebarSemanticKernelQueryRewriter>();
         services.AddSingleton<SemanticKernelQueryRewriter>();
         services.AddSingleton<StandardVectorSearchQueryHandler>();
         services.AddSingleton<KeywordSearchQueryHandler>();
@@ -315,7 +321,15 @@ internal class CustomSearchPipelineBase : ISample2
             }
 
             config.SetReRanker<CohereReRanker>();
-            config.SetQueryRewriter<SemanticKernelQueryRewriter>();
+
+            if (useHandlebarQueryRewriter)
+            {
+                config.SetQueryRewriter<HandlebarSemanticKernelQueryRewriter>();
+            }
+            else
+            {
+                config.SetQueryRewriter<SemanticKernelQueryRewriter>();
+            }
         });
         return kernelMemoryBuilder;
     }
