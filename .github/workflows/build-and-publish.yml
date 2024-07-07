@@ -38,6 +38,7 @@ jobs:
       - name: build and publish
         env:
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         shell: pwsh
         run: |
           ./build.ps1 -nugetPublish $true -nugetApiKey ${{ secrets.NUGET_API_KEY }}
