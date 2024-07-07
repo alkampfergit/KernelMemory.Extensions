@@ -11,8 +11,8 @@ namespace KernelMemory.ElasticSearch.Anthropic;
 
 internal class AnthropicTextGeneration : ITextGenerator
 {
+    private readonly RawAnthropicHttpClient _rawAnthropicHttpClient;
     private readonly AnthropicTextGenerationConfiguration _config;
-    private readonly RawAnthropicClient _client;
 
     /// <summary>
     /// We do not have cohere tokenizer directly in C# - in this first version we use gpt4 tokenizer
@@ -21,11 +21,11 @@ internal class AnthropicTextGeneration : ITextGenerator
     private static readonly Tokenizer _tokenizer = Tokenizer.CreateTiktokenForModel("gpt-4");
 
     public AnthropicTextGeneration(
-        IHttpClientFactory httpClientFactory,
+        RawAnthropicHttpClient rawAnthropicHttpClient,
         AnthropicTextGenerationConfiguration config)
     {
+        _rawAnthropicHttpClient = rawAnthropicHttpClient;
         _config = config;
-        _client = new RawAnthropicClient(_config.ApiKey, httpClientFactory, _config.HttpClientName);
     }
 
     /// <inheritdoc />
@@ -51,7 +51,7 @@ internal class AnthropicTextGeneration : ITextGenerator
             Temperature = options.Temperature,
             MaxTokens = options.MaxTokens ?? 2048
         };
-        var streamedResponse = _client.CallClaudeStreaming(p);
+        var streamedResponse = _rawAnthropicHttpClient.CallClaudeStreaming(p);
 
         await foreach (var response in streamedResponse.WithCancellation(cancellationToken))
         {

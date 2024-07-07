@@ -1,4 +1,5 @@
 ﻿using KernelMemory.Extensions.Helper;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,21 +13,46 @@ using System.Threading.Tasks;
 
 namespace KernelMemory.ElasticSearch.Anthropic;
 
-public class RawAnthropicClient
+public class RawAnthropicClient 
 {
-    private readonly string _apiKey;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly string? _httpClientName;
-    private readonly string _baseUrl = "https://api.anthropic.com";
+    private readonly IServiceProvider _serviceProvider;
 
     public RawAnthropicClient(
-        string apiKey,
-        IHttpClientFactory httpClientFactory,
-        string? httpClientName)
+        IServiceProvider serviceProvider
+    )
     {
-        _apiKey = apiKey;
-        _httpClientFactory = httpClientFactory;
-        _httpClientName = httpClientName;
+        this._serviceProvider = serviceProvider;
+    }
+
+    public async IAsyncEnumerable<StreamingResponseMessage> CallClaudeStreaming(
+        CallClaudeStreamingParams parameters,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var client = CreateClient();
+        await foreach (var message in client.CallClaudeStreaming(parameters, cancellationToken))
+        {
+            yield return message;
+        }
+    }
+
+    private RawAnthropicHttpClient CreateClient()
+    {
+        return _serviceProvider.GetRequiredService<RawAnthropicHttpClient>();
+    }
+}
+
+public class RawAnthropicHttpClient
+{
+    private readonly AnthropicTextGenerationConfiguration _configuration;
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://api.anthropic.com";
+
+    public RawAnthropicHttpClient(
+        AnthropicTextGenerationConfiguration configuration,
+        HttpClient httpClient)
+    {
+        this._configuration = configuration;
+        _httpClient = httpClient;
     }
 
     /// <summary>
@@ -60,7 +86,7 @@ public class RawAnthropicClient
         string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.Add("x-api-key", _apiKey);
+        content.Headers.Add("x-api-key", _configuration.ApiKey);
         content.Headers.Add("anthropic-version", "2023-06-01");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/messages")
@@ -68,7 +94,7 @@ public class RawAnthropicClient
             Content = content,
         };
 
-        var httpClient = GetHttpClient();
+        var httpClient = _httpClient;
         var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -118,15 +144,6 @@ public class RawAnthropicClient
         }
     }
 
-    private HttpClient GetHttpClient()
-    {
-        if (string.IsNullOrEmpty(_httpClientName))
-        {
-            return _httpClientFactory.CreateClient();
-        }
-        return _httpClientFactory.CreateClient(_httpClientName);
-    }
-
     public async Task<MessageResponse> CallClaude(string prompt)
     {
         var requestPayload = new MessageRequest
@@ -148,7 +165,7 @@ public class RawAnthropicClient
         string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.Add("x-api-key", _apiKey);
+        content.Headers.Add("x-api-key", _configuration.ApiKey);
         content.Headers.Add("anthropic-version", "2023-06-01");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/messages")
@@ -156,7 +173,7 @@ public class RawAnthropicClient
             Content = content,
         };
 
-        var httpClient = GetHttpClient();
+        var httpClient = _httpClient;
         var response = await httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {

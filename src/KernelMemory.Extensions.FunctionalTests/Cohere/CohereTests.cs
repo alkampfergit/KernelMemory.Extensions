@@ -8,9 +8,9 @@ namespace KernelMemory.Extensions.FunctionalTests.Cohere;
 
 public class CohereTests
 {
-    private ServiceProvider _serviceProvider;
+    private readonly ServiceProvider _serviceProvider;
 
-    private IHttpClientFactory _httpClientFactory;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public CohereTests()
     {
