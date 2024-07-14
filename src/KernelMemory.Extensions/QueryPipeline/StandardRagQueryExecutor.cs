@@ -16,6 +16,11 @@ using System.Threading.Tasks;
 
 namespace KernelMemory.Extensions
 {
+    /// <summary>
+    /// Executes the query part, it will start with a predefined prompt
+    /// and then add in the prompt all the retrieved memories as fact and
+    /// then use the LLM to answer user query with the fact (grounding).
+    /// </summary>
     public class StandardRagQueryExecutor : BasicAsyncQueryHandlerWithProgress
     {
         public override string Name => "StandardRagQueryExecutor";

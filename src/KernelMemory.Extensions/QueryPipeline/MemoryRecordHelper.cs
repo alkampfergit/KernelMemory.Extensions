@@ -8,7 +8,7 @@ namespace KernelMemory.Extensions.QueryPipeline
 {
     internal static class MemoryRecordHelper
     {
-        internal static IReadOnlyCollection<Citation>? BuildCitations(
+        internal static IReadOnlyCollection<Citation> BuildCitations(
             List<MemoryRecord> usedMemoryRecord,
             string index,
             ILogger logger)

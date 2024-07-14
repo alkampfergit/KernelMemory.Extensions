@@ -80,7 +80,10 @@ internal class CustomSearchPipelineBase : ISample2
 
         var queryExecutorToUse = AnsiConsole.Prompt(new SelectionPrompt<string>()
             .Title("Select the query executor to use")
-            .AddChoices(["KernelMemory Default", "Cohere CommandR+"]));
+            .AddChoices([
+                "KernelMemory Default", 
+                "Cohere CommandR+",
+                "OpenAI Tool"]));
 
         var queryRewriterTool = AnsiConsole.Prompt(new SelectionPrompt<string>()
             .Title("Select query rewriter")
@@ -90,7 +93,7 @@ internal class CustomSearchPipelineBase : ISample2
         var builder = CreateBasicKernelMemoryBuilder(
             services,
             storageToUse == "elasticsearch",
-            queryExecutorToUse == "Cohere CommandR+",
+            queryExecutorToUse,
             queryRewriterTool == "Semantic Kernel Handlebar");
         var kernelMemory = builder.Build<MemoryServerless>();
         var kernel = kernelBuider.Build();
@@ -136,6 +139,7 @@ internal class CustomSearchPipelineBase : ISample2
                 var questionEnumerator = questionPipeline.ExecuteQueryAsync(userQuestion);
 
                 Console.WriteLine("\nAnswerStream:\n");
+                int segments = 0;
                 await foreach (var step in questionEnumerator)
                 {
                     if (shouldDumpRewrittenQuery)
@@ -146,9 +150,16 @@ internal class CustomSearchPipelineBase : ISample2
                     if (step.Type == UserQuestionProgressType.AnswerPart)
                     {
                         Console.Write(step.Text);
+                        segments++;
                     }
                 }
 
+                //ok we really have streaming result?^
+                if (segments == 0)
+                {
+                    //ok we have no streaming, so we need to get the whole answer.
+                    Console.Write(userQuestion.Answer);
+                }
                 Console.WriteLine("\n\n");
 
                 //ok we can validate the answer if requested
@@ -176,7 +187,7 @@ internal class CustomSearchPipelineBase : ISample2
 
     private static async Task ManageIndexingOfDocuments(MemoryServerless kernelMemory)
     {
-        var indexDocument = AnsiConsole.Confirm("Do you want to index documents? (y/n)", true);
+        var indexDocument = AnsiConsole.Confirm("Do you want to index documents? (y/n)", false);
         if (indexDocument)
         {
             var singleDocumentIdex = AnsiConsole.Confirm("Do you want to index a single document? (y/n)", true);
@@ -226,7 +237,7 @@ internal class CustomSearchPipelineBase : ISample2
     private static IKernelMemoryBuilder CreateBasicKernelMemoryBuilder(
         ServiceCollection services,
         bool useElasticSearch,
-        bool useCohereCommandRPlusForQueryExecutor,
+        string ragToolToUse,
         bool useHandlebarQueryRewriter)
     {
         // we need a series of services to use Kernel Memory, the first one is
@@ -305,6 +316,17 @@ internal class CustomSearchPipelineBase : ISample2
         services.AddSingleton<CohereCommandRQueryExecutor>();
         services.AddSingleton<StandardRagQueryExecutor>();
 
+        //register openai RAG component
+        var openaiRagQueryExecutorConfiguration = new OpenAIRagQueryExecutorConfiguration()
+        {
+            MaxTokens = 8000,
+            Temperature = 0.0,
+            ModelId = "gpt4o",
+            ModelName = "gpt-4o" //important it will determine the tokenizer
+        };
+        services.AddSingleton(openaiRagQueryExecutorConfiguration);
+        services.AddSingleton<OpenaiRagQueryExecutor>();
+
         //now create the pipeline
         services.AddKernelMemoryUserQuestionPipeline(config =>
         {
@@ -315,9 +337,13 @@ internal class CustomSearchPipelineBase : ISample2
                 config.AddHandler<KeywordSearchQueryHandler>();
             }
 
-            if (useCohereCommandRPlusForQueryExecutor)
+            if (ragToolToUse == "Cohere CommandR+")
             {
                 config.AddHandler<CohereCommandRQueryExecutor>();
+            }
+            else if (ragToolToUse == "OpenAI Tool")
+            {
+                config.AddHandler<OpenaiRagQueryExecutor>();
             }
             else
             {
