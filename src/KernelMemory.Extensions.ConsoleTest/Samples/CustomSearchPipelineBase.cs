@@ -46,7 +46,7 @@ internal class CustomSearchPipelineBase : ISample2
         {
             services.ConfigureCohereRerank(rerankApiKey);
         }
-        
+
         services.AddHttpClient<RawCohereChatClient>()
             .AddStandardResilienceHandler(options =>
             {

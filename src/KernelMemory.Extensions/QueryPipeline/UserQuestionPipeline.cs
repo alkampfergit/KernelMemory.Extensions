@@ -1,4 +1,6 @@
 ﻿using KernelMemory.Extensions.QueryPipeline;
+using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -13,6 +15,12 @@ public class UserQuestionPipeline
 
     private IReRanker _reRanker = new BaseReRanker();
     private IConversationQueryRewriter? _conversationQueryRewriter;
+    private ILogger<UserQuestionPipeline> _log;
+
+    public UserQuestionPipeline(ILogger<UserQuestionPipeline>? log = null)
+    {
+        _log = log ?? DefaultLogger<UserQuestionPipeline>.Instance;
+    }
 
     public UserQuestionPipeline AddHandler(IQueryHandler queryHandler)
     {
@@ -96,11 +104,13 @@ public class UserQuestionPipeline
             //Execute the handler and verify if the question has been answered.
             try
             {
+                _log.LogDebug("Executing handler {handler}", handler.GetType().Name);
                 await handler.HandleAsync(userQuestion, cancellationToken);
             }
             catch (Exception ex)
             {
                 userQuestion.Errors = $"Exception in handler {handler.GetType().FullName} - {ex}";
+                _log.LogError(ex, "Exception in handler {0}", handler.GetType().FullName);
                 break;
             }
 
