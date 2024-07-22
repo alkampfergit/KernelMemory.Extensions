@@ -2,6 +2,7 @@
 using KernelMemory.Extensions;
 using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.ConsoleTest.Helper;
+using KernelMemory.Extensions.Helper;
 using KernelMemory.Extensions.QueryPipeline;
 using KernelMemory.Extensions.QueryPipeline.Diagnostic;
 using Microsoft.Extensions.DependencyInjection;
@@ -249,12 +250,15 @@ internal class CustomSearchPipelineBase : ISample2
             Endpoint = Dotenv.Get("AZURE_ENDPOINT") ?? throw new ConfigurationException("AZURE_ENDPOINT missing from .env file"),
             APIType = AzureOpenAIConfig.APITypes.ChatCompletion,
             Auth = AzureOpenAIConfig.AuthTypes.APIKey,
-            MaxTokenTotal = 4096
+            MaxTokenTotal = 4096,
         };
 
+        //I need to override the tokenizer because kernel memory uses older version of Microsoft.Ml.Tokenizer
+        var textGenerationTokenizer = new MicrosoftMlTiktokenTokenizer("gpt-4o");
+        var embeddingTokenizer = new MicrosoftMlTiktokenTokenizer("text-embedding-ada-002");
         var kernelMemoryBuilder = new KernelMemoryBuilder(services)
-            .WithAzureOpenAITextGeneration(chatConfig)
-            .WithAzureOpenAITextEmbeddingGeneration(embeddingConfig);
+            .WithAzureOpenAITextGeneration(chatConfig, textGenerationTokenizer)
+            .WithAzureOpenAITextEmbeddingGeneration(embeddingConfig, embeddingTokenizer);
 
         kernelMemoryBuilder
            .WithSimpleFileStorage(new SimpleFileStorageConfig()

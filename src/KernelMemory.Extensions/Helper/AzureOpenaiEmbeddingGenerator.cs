@@ -3,6 +3,7 @@ using Azure.AI.OpenAI;
 using KernelMemory.Extensions.Interfaces;
 using Microsoft.KernelMemory;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +42,11 @@ public class AzureOpenaiEmbeddingGenerator : IBulkTextEmbeddingGenerator
     public int CountTokens(string text)
     {
         return _microsoftMlTiktokenTokenizer.CountTokens(text);
+    }
+
+    public IReadOnlyList<string> GetTokens(string text)
+    {
+        return _microsoftMlTiktokenTokenizer.GetTokens(text);
     }
 
     public async Task<Embedding> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)

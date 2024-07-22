@@ -1,6 +1,8 @@
 ﻿using Microsoft.KernelMemory.AI;
 using Microsoft.ML.Tokenizers;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace KernelMemory.Extensions.Helper
 {
@@ -22,6 +24,12 @@ namespace KernelMemory.Extensions.Helper
         public int CountTokens(string text)
         {
             return _tikToken.CountTokens(text);
+        }
+
+        public IReadOnlyList<string> GetTokens(string text)
+        {
+            var tokens = _tikToken.Encode(text, out var normalizedString);
+            return tokens.Select(t => t.Value).ToArray();
         }
     }
 }

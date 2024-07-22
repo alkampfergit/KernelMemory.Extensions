@@ -1,6 +1,6 @@
-﻿using KernelMemory.Extensions.LocalLlm;
+﻿using KernelMemory.Extensions.Helper;
+using KernelMemory.Extensions.LocalLlm;
 using Microsoft.KernelMemory.AI;
-using Microsoft.KernelMemory.AI.OpenAI;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -15,7 +15,7 @@ public class LmStudioTextGeneration : ITextGenerator
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _baseUri;
-    private readonly DefaultGPTTokenizer _textTokenizer;
+    private readonly MicrosoftMlTiktokenTokenizer _textTokenizer;
 
     public LmStudioTextGeneration(
         IHttpClientFactory httpClientFactory,
@@ -25,7 +25,7 @@ public class LmStudioTextGeneration : ITextGenerator
         _httpClientFactory = httpClientFactory;
         _baseUri = baseUri;
 
-        _textTokenizer = new DefaultGPTTokenizer();
+        _textTokenizer = new MicrosoftMlTiktokenTokenizer("gpt-4");
         MaxTokenTotal = maxToken;
     }
 
@@ -36,6 +36,11 @@ public class LmStudioTextGeneration : ITextGenerator
     public int CountTokens(string text)
     {
         return _textTokenizer.CountTokens(text);
+    }
+
+    public IReadOnlyList<string> GetTokens(string text)
+    {
+        return _textTokenizer.GetTokens(text);
     }
 
     /// <inheritdoc />

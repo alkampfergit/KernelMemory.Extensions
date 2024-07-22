@@ -37,6 +37,12 @@ internal class AnthropicTextGeneration : ITextGenerator
         return _tokenizer.CountTokens(text);
     }
 
+    public IReadOnlyList<string> GetTokens(string text)
+    {
+        var tokens = _tokenizer.Encode(text, out var normalizedString);
+        return tokens.Select(t => t.Value).ToArray();
+    }
+
     /// <inheritdoc />
     public async IAsyncEnumerable<string> GenerateTextAsync(
         string prompt,

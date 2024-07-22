@@ -89,6 +89,33 @@ public class ExternalEmbeddingGenerator : ITextEmbeddingGenerator
         return tokenCountResult.count;
     }
 
+    public IReadOnlyList<string> GetTokens(string text)
+    {
+        var client = _httpClientFactory.CreateClient();
+        //do a post request to the model to get the dense vector size
+        var body = new
+        {
+            modelName = _embeddingGeneratorConfig.ModelName,
+            text
+        };
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_embeddingGeneratorConfig.Address.TrimEnd('/')}/tokenize")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+        };
+
+        var response = client.Send(request);
+
+        //TODO: Proper error handling
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Failed to get dense vector size");
+        }
+        var responseStream = response.Content.ReadAsStream();
+        var tokenCountResult = JsonSerializer.Deserialize<TokenizeResult>(responseStream);
+        _log.LogDebug("[{countnum}]Tokenize of text of len {textlength} token number {tokencount}", Interlocked.Increment(ref _countTokenCallNum).ToString().PadLeft(8, ' '), text.Length, tokenCountResult!.tokens.Length);
+        return tokenCountResult!.tokens.Select(t => t.value).ToArray();
+    }
+
     /// <inheritdoc />
     public async Task<Embedding> GenerateEmbeddingAsync(
         string text, CancellationToken cancellationToken = default)
@@ -128,6 +155,10 @@ public class ExternalEmbeddingGenerator : ITextEmbeddingGenerator
 
     private record EmbeddingInfo(string model, int dimension);
     private record TokenCountResult(int count);
+
+    private record TokenizeResult(Token[] tokens);
+
+    public record Token(int token, string value);
 }
 
 public class ExternalEmbeddingGeneratorConfig
