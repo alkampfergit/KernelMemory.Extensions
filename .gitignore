@@ -20,7 +20,7 @@ mono_crash.*
 # Virtual Environment
 
 src/python/KernelMemory/
- src/python/kerkelmemoryextensions/
+src/python/kerkelmemoryextensions/
 
 # Build results
 [Dd]ebug/
