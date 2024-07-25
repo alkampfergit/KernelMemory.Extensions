@@ -34,6 +34,11 @@ public class UserQuestion
     public string Question { get; private set; }
 
     /// <summary>
+    /// if the question was rewritten, this stores the original question made by the user.
+    /// </summary>
+    public string OriginalQuestion { get; private set; }
+
+    /// <summary>
     /// Optional list of filter to perform the query.
     /// </summary>
     public ICollection<MemoryFilter>? Filters { get; }
@@ -193,6 +198,7 @@ public class UserQuestion
 
     public void RewriteQuestion(string newQuestion) 
     {
+        OriginalQuestion = Question;
         Question = newQuestion;
     }
 

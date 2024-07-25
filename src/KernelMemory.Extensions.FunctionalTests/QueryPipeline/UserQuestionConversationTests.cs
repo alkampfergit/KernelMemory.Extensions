@@ -69,6 +69,17 @@ public class UserQuestionConversationTests
     }
 
     [Fact]
+    public void Original_question_is_saved_when_rewriting_question()
+    {
+        var sut = GenerateSut("What is water");
+
+        sut.RewriteQuestion("What is the color of the sky");
+
+        Assert.Equal("What is water", sut.OriginalQuestion);
+        Assert.Equal("What is the color of the sky", sut.Question);
+    }
+
+    [Fact]
     public void Can_add_saved_conversation_to_userQuestion() 
     {
         var sut = GenerateSut("What is water");
