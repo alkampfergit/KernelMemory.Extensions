@@ -2,7 +2,6 @@
 using Microsoft.ML.Tokenizers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,8 +51,8 @@ internal class AnthropicTextGeneration : ITextGenerator
         CallClaudeStreamingParams p = new CallClaudeStreamingParams
         {
             ModelName = _config.ModelName,
-            System = "You are an assistant that will answer user query based on a context",
-            Prompt = prompt,
+            System = [SystemMessage.Create( "You are an assistant that will answer user query based on a context")],
+            Messages = [Message.Create("user", prompt)],
             Temperature = options.Temperature,
             MaxTokens = options.MaxTokens ?? 2048
         };

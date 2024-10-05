@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -33,6 +34,14 @@ public class RawAnthropicClient
         {
             yield return message;
         }
+    }
+
+    public Task<MessageResponse> CallClaudeAsync(
+        CallClaudeStreamingParams parameters,
+        CancellationToken cancellationToken = default)
+    {
+        var client = CreateClient();
+        return client.CallClaude(parameters, cancellationToken);
     }
 
     private RawAnthropicHttpClient CreateClient()
@@ -73,14 +82,7 @@ public class RawAnthropicHttpClient
             Temperature = parameters.Temperature,
             System = parameters.System,
             Stream = true,
-            Messages = new[]
-            {
-                new Message
-                {
-                    Role = "user",
-                    Content = parameters.Prompt
-                }
-            }
+            Messages = parameters.Messages,
         };
 
         string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
@@ -88,6 +90,7 @@ public class RawAnthropicHttpClient
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
         content.Headers.Add("x-api-key", _configuration.ApiKey);
         content.Headers.Add("anthropic-version", "2023-06-01");
+        content.Headers.Add("anthropic-beta", "prompt-caching-2024-07-31");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/messages")
         {
@@ -144,22 +147,17 @@ public class RawAnthropicHttpClient
         }
     }
 
-    public async Task<MessageResponse> CallClaude(string prompt)
+    public async Task<MessageResponse> CallClaude(
+        CallClaudeStreamingParams parameters,
+        CancellationToken cancellationToken = default)
     {
         var requestPayload = new MessageRequest
         {
             Model = "claude-3-haiku-20240307",
             MaxTokens = 1000,
             Temperature = 0.3,
-            System = "You are a nice storyteller",
-            Messages = new[]
-            {
-                new Message
-                {
-                    Role = "user",
-                    Content = prompt
-                }
-            }
+            System = parameters.System, // Updated to use IReadOnlyCollection<SystemMessage>
+            Messages = parameters.Messages,
         };
 
         string jsonPayload = HttpClientPayloadSerializerHelper.Serialize(requestPayload);
@@ -168,33 +166,50 @@ public class RawAnthropicHttpClient
         content.Headers.Add("x-api-key", _configuration.ApiKey);
         content.Headers.Add("anthropic-version", "2023-06-01");
 
+        if (parameters.HasCacheControl) 
+        {
+            content.Headers.Add("anthropic-beta", "prompt-caching-2024-07-31");
+        }
+
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/messages")
         {
             Content = content,
         };
 
         var httpClient = _httpClient;
-        var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            var responseError = await response.Content.ReadAsStringAsync();
+            var responseError = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new Exception($"Failed to send request: {response.StatusCode} - {responseError}");
         }
         response.EnsureSuccessStatusCode();
-        string jsonResponse = await response.Content.ReadAsStringAsync();
+        string jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<MessageResponse>(jsonResponse)!;
     }
 }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
+
 public class CallClaudeStreamingParams
 {
     public string ModelName { get; set; }
-    public string System { get; set; }
-    public string Prompt { get; set; }
+    public IReadOnlyCollection<SystemMessage> System { get; set; } // Updated to IReadOnlyCollection<SystemMessage>
+    public IReadOnlyCollection<Message> Messages { get; set; }
     public double Temperature { get; set; }
     public int MaxTokens { get; set; }
+
+    // Adding HasCacheControl property
+    public bool HasCacheControl => System?.Any(sm => sm.CacheControl != null) ?? false;
+}
+
+public class CacheControl
+{
+    public static CacheControl Ephemeral {get; private set;}= new CacheControl { Type = "ephemeral" }; 
+
+    [JsonPropertyName("type")]
+    public string Type { get; private set; } = "ephemeral";
 }
 
 public class MessageRequest
@@ -212,14 +227,23 @@ public class MessageRequest
     public double Temperature { get; set; }
 
     [JsonPropertyName("system")]
-    public string System { get; set; }
+    public IReadOnlyCollection<SystemMessage> System { get; set; }
 
     [JsonPropertyName("messages")]
-    public Message[] Messages { get; set; }
+    public IReadOnlyCollection<Message> Messages { get; set; }
 }
 
 public class Message
 {
+    public static Message Create(string role, string content)
+    {
+        return new Message
+        {
+            Role = role,
+            Content = content
+        };
+    }
+
     [JsonPropertyName("role")]
     public string Role { get; set; }
 
@@ -227,11 +251,70 @@ public class Message
     public string Content { get; set; }
 }
 
+public class SystemMessage
+{
+    public static SystemMessage Create(string text, CacheControl? cacheControl = null)
+    {
+        return new SystemMessage
+        {
+            Type = "text",
+            Text = text,
+            CacheControl = cacheControl
+        };
+    }
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "text";
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("cache_control")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CacheControl? CacheControl { get; set; }
+}
 public class MessageResponse
 {
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
+
+    [JsonPropertyName("role")]
+    public string Role { get; set; }
+
+    [JsonPropertyName("model")]
+    public string Model { get; set; }
+
     [JsonPropertyName("content")]
     public ContentResponse[] Content { get; set; }
+
+    [JsonPropertyName("stop_reason")]
+    public string StopReason { get; set; }
+
+    [JsonPropertyName("stop_sequence")]
+    public string StopSequence { get; set; }
+
+    [JsonPropertyName("usage")]
+    public Usage Usage { get; set; }
 }
+
+public class Usage
+{
+    [JsonPropertyName("input_tokens")]
+    public int InputTokens { get; set; }
+
+    [JsonPropertyName("cache_creation_input_tokens")]
+    public int CacheCreationInputTokens { get; set; }
+
+    [JsonPropertyName("cache_read_input_tokens")]
+    public int CacheReadInputTokens { get; set; }
+
+    [JsonPropertyName("output_tokens")]
+    public int OutputTokens { get; set; }
+}
+
 
 public class ContentResponse
 {
