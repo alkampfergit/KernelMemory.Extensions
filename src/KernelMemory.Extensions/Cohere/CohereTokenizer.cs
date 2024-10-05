@@ -14,7 +14,7 @@ namespace KernelMemory.Extensions.Cohere;
 /// </summary>
 public class CohereTokenizer
 {
-    public Dictionary<string, Tiktoken> Tokenizers { get; set; } = new();
+    public Dictionary<string, TiktokenTokenizer> Tokenizers { get; set; } = new();
 
     public CohereTokenizer(IHttpClientFactory httpClientFactory)
     {
@@ -31,7 +31,7 @@ public class CohereTokenizer
         var extraData = File.ReadAllText(tokenizerExtraFile);
         var ed = JsonSerializer.Deserialize<ExtraTokenizerData>(extraData)!;
 
-        var tiktoken = new Tiktoken(tokenizerFile, null, specialTokens: ed.GetSpecialToken());
+        var tiktoken = TiktokenTokenizer.Create(tokenizerFile, null, null, specialTokens: ed.GetSpecialToken());
         Tokenizers["command-r-plus"] = tiktoken;
     }
 

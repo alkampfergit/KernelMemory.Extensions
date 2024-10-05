@@ -1,4 +1,4 @@
-using Azure.AI.OpenAI;
+using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -124,8 +124,6 @@ public class ToolCallFunction
 
 public class Message
 {
-    private readonly StreamingResponse<StreamingChatCompletionsUpdate> _streamingChatCompletions;
-
     public Message(string role, string content)
     {
         Role = role;
@@ -135,37 +133,6 @@ public class Message
     [JsonConstructor]
     public Message()
     {
-    }
-
-    public Message(StreamingResponse<StreamingChatCompletionsUpdate> streamingChatCompletions)
-    {
-        _streamingChatCompletions = streamingChatCompletions;
-        Content = "";
-        Role = "assistant";
-        Task.Run(ReadStreamResponse);
-    }
-
-    private async Task ReadStreamResponse()
-    {
-        try
-        {
-            if (_streamingChatCompletions != null)
-            {
-                using (_streamingChatCompletions)
-                {
-                    await foreach (var update in _streamingChatCompletions)
-                    {
-                        Content += update.ContentUpdate;
-                        OnContentChanged();
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
     }
 
     public static Message CreateSystemMessage(string message)
@@ -205,26 +172,6 @@ public class Message
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("tool_call_id")]
     public string ToolCallId { get; set; }
-
-    public ChatRole GetChatRole()
-    {
-        if ("system".Equals(Role, StringComparison.OrdinalIgnoreCase))
-        {
-            return ChatRole.System;
-        }
-        else if ("assistant".Equals(Role, StringComparison.OrdinalIgnoreCase))
-        {
-            return ChatRole.Assistant;
-        }
-        else if ("user".Equals(Role, StringComparison.OrdinalIgnoreCase))
-        {
-            return ChatRole.User;
-        }
-        else
-        {
-            throw new System.Exception("Unknown role: " + Role);
-        }
-    }
 }
 
 

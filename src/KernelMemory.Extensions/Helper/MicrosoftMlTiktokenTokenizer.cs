@@ -1,6 +1,5 @@
 ﻿using Microsoft.KernelMemory.AI;
 using Microsoft.ML.Tokenizers;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +17,7 @@ namespace KernelMemory.Extensions.Helper
 
         public MicrosoftMlTiktokenTokenizer(string baseModelName)
         {
-            _tikToken = Tiktoken.CreateTiktokenForModel(baseModelName);
+            _tikToken = TiktokenTokenizer.CreateForModel(baseModelName);
         }
 
         public int CountTokens(string text)
@@ -28,7 +27,7 @@ namespace KernelMemory.Extensions.Helper
 
         public IReadOnlyList<string> GetTokens(string text)
         {
-            var tokens = _tikToken.Encode(text, out var normalizedString);
+            var tokens = _tikToken.EncodeToTokens(text, out var normalizedString);
             return tokens.Select(t => t.Value).ToArray();
         }
     }

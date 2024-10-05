@@ -71,7 +71,7 @@ public class OpenaiRagQueryExecutor : BasicQueryHandler
     {
         _kernel = kernel;
         _config = config ?? new OpenAIRagQueryExecutorConfiguration();
-        _tokenizer = Tiktoken.CreateTiktokenForModel(_config.ModelName);
+        _tokenizer = TiktokenTokenizer.CreateForModel(_config.ModelName);
         _log = log ?? DefaultLogger<StandardRagQueryExecutor>.Instance;
     }
 

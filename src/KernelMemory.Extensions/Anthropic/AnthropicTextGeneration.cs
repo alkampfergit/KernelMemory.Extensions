@@ -18,7 +18,7 @@ internal class AnthropicTextGeneration : ITextGenerator
     /// We do not have cohere tokenizer directly in C# - in this first version we use gpt4 tokenizer
     /// and we know that this is a raw approximation but we only need to count.
     /// </summary>
-    private static readonly Tokenizer _tokenizer = Tokenizer.CreateTiktokenForModel("gpt-4");
+    private static readonly Tokenizer _tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
 
     public AnthropicTextGeneration(
         RawAnthropicHttpClient rawAnthropicHttpClient,
@@ -39,7 +39,7 @@ internal class AnthropicTextGeneration : ITextGenerator
 
     public IReadOnlyList<string> GetTokens(string text)
     {
-        var tokens = _tokenizer.Encode(text, out var normalizedString);
+        var tokens = _tokenizer.EncodeToTokens(text, out var normalizedString);
         return tokens.Select(t => t.Value).ToArray();
     }
 
