@@ -37,7 +37,8 @@ public class CohereRagRequest
         CohereRagRequest ragRequest = new CohereRagRequest()
         {
             Message = question,
-            Documents = new List<RagDocument>()
+            Documents = new List<RagDocument>(),
+            MaxTokens = 1000,
         };
 
         foreach (var memory in memoryRecords)
