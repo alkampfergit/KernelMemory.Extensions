@@ -49,7 +49,7 @@ jobs:
           subject-path: 'artifacts/NuGet'
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nuget-packages
           path: artifacts/NuGet
