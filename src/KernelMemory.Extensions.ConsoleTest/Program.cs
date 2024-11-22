@@ -21,6 +21,7 @@ public static class Program
         services.AddSingleton<TextCleanerHandler>();
         services.AddSingleton<CustomSearchPipelineBase>();
         services.AddSingleton<AnthropicSample>();
+        services.AddSingleton<ContextualRetrievalSample>();
         services.AddHttpClient();
 
         var serviceProvider = services.BuildServiceProvider();
@@ -33,6 +34,7 @@ public static class Program
             ["SBert in action"] = typeof(SBertSample),
             ["Custom Search pipeline (Basic)"] = typeof(CustomSearchPipelineBase),
             ["Anthropic"] = typeof(AnthropicSample),
+            ["Contextual retrieval"] = typeof(ContextualRetrievalSample),
             ["Exit"] = null
         };
 
@@ -58,7 +60,10 @@ public static class Program
                 {
                     var book = AnsiConsole.Prompt(new SelectionPrompt<string>()
                         .Title("Select the [green]book[/] to index")
-                        .AddChoices([@"c:\temp\advancedapisecurity.pdf", @"S:\OneDrive\B19553_11.pdf"]));
+                        .AddChoices([
+                            @"c:\temp\advancedapisecurity.pdf", 
+                            @"S:\OneDrive\B19553_11.pdf",
+                            @"/Users/gianmariaricci/Downloads/llchaindata/blackhatpython.pdf"]));
                     await sampleInstance1.RunSample(book);
                 }
             }
