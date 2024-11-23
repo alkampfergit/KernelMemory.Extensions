@@ -27,25 +27,28 @@ internal class CustomSearchPipelineBase : ISample2
     {
         var services = new ServiceCollection();
 
-        var apiKey = Dotenv.Get("COHERE_API_KEY")!;
-        var cohereBaseUrl = Dotenv.Get("COHERE_BASE_API_KEY");
-        if (string.IsNullOrEmpty(cohereBaseUrl))
+        var cohereAzureBaseUrl = Dotenv.Get("COHERE_AZURE_BASE_URL");
+        if (string.IsNullOrEmpty(cohereAzureBaseUrl))
         {
+            var apiKey = Dotenv.Get("COHERE_API_KEY")!;
             services.ConfigureCohereChat(apiKey);
         }
         else
         {
-            services.ConfigureCohereChat(apiKey, cohereBaseUrl);
+            var azureApiKey = Dotenv.Get("COHERE_AZURE_API_KEY");
+            services.ConfigureCohereChat(azureApiKey, cohereAzureBaseUrl);
         }
         //verify if rerank has a different api key (because the apikey point on azure ai studio)
-        var rerankApiKey = Dotenv.Get("COHERE_RERANK_API_KEY");
-        if (string.IsNullOrEmpty(rerankApiKey))
+        var rerankAzureBaseUrl = Dotenv.Get("COHERE_AZURE_RERANK_BASE_URL");
+        if (string.IsNullOrEmpty(rerankAzureBaseUrl))
         {
+            var apiKey = Dotenv.Get("COHERE_API_KEY")!;
             services.ConfigureCohereRerank(apiKey);
         }
         else
         {
-            services.ConfigureCohereRerank(rerankApiKey);
+            var azureReRankApiKey = Dotenv.Get("COHERE_AZURE_RERANK_API_KEY");
+            services.ConfigureCohereRerank(azureReRankApiKey, rerankAzureBaseUrl);
         }
 
         services.AddHttpClient<RawCohereChatClient>()
@@ -89,12 +92,15 @@ internal class CustomSearchPipelineBase : ISample2
             .Title("Select query rewriter")
             .AddChoices(["Semantic Kernel Base", "Semantic Kernel Handlebar"]));
 
+        var useHyde = AnsiConsole.Confirm("Do you want to use HyDe? (y/n)", false);
+
         var kernelBuider = CreateBasicKernelBuilder();
         var builder = CreateBasicKernelMemoryBuilder(
             services,
             storageToUse == "elasticsearch",
             queryExecutorToUse,
-            queryRewriterTool == "Semantic Kernel Handlebar");
+            queryRewriterTool == "Semantic Kernel Handlebar",
+            useHyde);
         var kernelMemory = builder.Build<MemoryServerless>();
         var kernel = kernelBuider.Build();
 
@@ -238,7 +244,8 @@ internal class CustomSearchPipelineBase : ISample2
         ServiceCollection services,
         bool useElasticSearch,
         string ragToolToUse,
-        bool useHandlebarQueryRewriter)
+        bool useHandlebarQueryRewriter,
+        bool useHyde)
     {
         // we need a series of services to use Kernel Memory, the first one is
         // an embedding service that will be used to create dense vector for
@@ -306,6 +313,12 @@ internal class CustomSearchPipelineBase : ISample2
         services.AddSingleton<HandlebarSemanticKernelQueryRewriter>();
         services.AddSingleton<SemanticKernelQueryRewriter>();
         services.AddSingleton<StandardVectorSearchQueryHandler>();
+        services.AddSingleton<HyDeQueryHandler>();
+        var hydeConfig = new HiDeQueryHandlerConfiguration()
+        {
+            Prompt = "Given a question, generate a paragraph of text that answers the question in the context of computer security and IT security"
+        };
+        services.AddSingleton(hydeConfig);
         services.AddSingleton<KeywordSearchQueryHandler>();
 
         var rewriterOptions = new SemanticKernelQueryRewriterOptions();
@@ -335,6 +348,11 @@ internal class CustomSearchPipelineBase : ISample2
             {
                 //I can use keyword search
                 config.AddHandler<KeywordSearchQueryHandler>();
+            }
+
+            if (useHyde)
+            {
+                config.AddHandler<HyDeQueryHandler>();
             }
 
             if (ragToolToUse == "Cohere CommandR+")
