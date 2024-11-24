@@ -34,6 +34,13 @@ public class UserQuestion
     public string Question { get; private set; }
 
     /// <summary>
+    /// If we know the context in which the query live, we can 
+    /// use it during the search, especially with query enhancer
+    /// like HyDe or similar techniques.
+    /// </summary>
+    public string Context { get; set; }
+
+    /// <summary>
     /// if the question was rewritten, this stores the original question made by the user.
     /// </summary>
     public string OriginalQuestion { get; private set; }

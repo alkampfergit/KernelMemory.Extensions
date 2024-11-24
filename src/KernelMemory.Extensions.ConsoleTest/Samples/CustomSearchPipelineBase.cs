@@ -136,6 +136,7 @@ internal class CustomSearchPipelineBase : ISample2
                 {
                     var options = new UserQueryOptions("default");
                     userQuestion = new UserQuestion(options, question);
+                    userQuestion.Context = "Computer security and IT Security";
                 }
                 else
                 {
@@ -316,7 +317,7 @@ internal class CustomSearchPipelineBase : ISample2
         services.AddSingleton<HyDeQueryHandler>();
         var hydeConfig = new HiDeQueryHandlerConfiguration()
         {
-            Prompt = "Given a question, generate a paragraph of text that answers the question in the context of computer security and IT security"
+            Prompt = "Given a question, generate a paragraph of text that answers the question"
         };
         services.AddSingleton(hydeConfig);
         services.AddSingleton<KeywordSearchQueryHandler>();

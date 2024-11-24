@@ -47,6 +47,11 @@ public class HyDeQueryHandler : BasicQueryHandler
         // Perform a vector search in default memory
         StringBuilder prompt = new StringBuilder(_configuration.Prompt.Length + userQuestion.Question.Length + "Question: ".Length + "Paragraph: ".Length + 20);
         prompt.AppendLine(_configuration.Prompt);
+        if (!string.IsNullOrEmpty(userQuestion.Context))
+        {
+            prompt.AppendLine("The context of the question is: " + userQuestion.Context);
+        }
+
         prompt.AppendLine("Question: " + userQuestion.Question);
         prompt.AppendLine("Paragraph: ");
 
