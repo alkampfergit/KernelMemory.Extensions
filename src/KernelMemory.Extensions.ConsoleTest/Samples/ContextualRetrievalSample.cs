@@ -32,7 +32,7 @@ public class ContextualRetrievalSample : ISample
             });
         services.AddTransient<RawAnthropicClient>();
 
-        var anthropicApiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")!;
+        var anthropicApiKey = Dotenv.Get("ANTHROPIC_API_KEY")!;
         if (string.IsNullOrEmpty(anthropicApiKey))
         {
             throw new Exception("ANTHROPIC_API_KEY is not set");
@@ -43,7 +43,6 @@ public class ContextualRetrievalSample : ISample
             ApiKey = anthropicApiKey,
         };
         services.AddSingleton(config);
-
 
         var builder = CreateBasicKernelMemoryBuilder(services);
         var kernelMemory = builder.Build<MemoryServerless>();
@@ -148,14 +147,14 @@ public class ContextualRetrievalSample : ISample
         kernelMemoryBuilder
             .WithSimpleFileStorage(new SimpleFileStorageConfig()
             {
-                Directory = "/tmp/km/storage",
-                //Directory = "c:\\temp\\km2\\storage",
+                //Directory = "/tmp/km/storage",
+                Directory = "c:\\temp\\km2\\storage",
                 StorageType = FileSystemTypes.Disk
             })
             .WithSimpleVectorDb(new SimpleVectorDbConfig()
             {
-                Directory = "/tmp/km/vectorstorage",
-                //Directory = "c:\\temp\\km2\\vectorstorage",
+                //Directory = "/tmp/km/vectorstorage",
+                Directory = "c:\\temp\\km2\\vectorstorage",
                 StorageType = FileSystemTypes.Disk
             });
 

@@ -63,6 +63,7 @@ public static class Program
                         .AddChoices([
                             @"c:\temp\advancedapisecurity.pdf", 
                             @"S:\OneDrive\B19553_11.pdf",
+                            @"c:\temp\blackhatpython.pdf",
                             @"/Users/gianmariaricci/Downloads/llchaindata/blackhatpython.pdf"]));
                     await sampleInstance1.RunSample(book);
                 }

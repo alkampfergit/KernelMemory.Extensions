@@ -56,9 +56,10 @@ public class SemanticKernelQueryRewriter : IConversationQueryRewriter
             }
         }
         string prompt = $@"You will reformulate the question based on the conversation up to this point so the question will
-be a standalone question that contains also the previous context. If there is no correlation you will output the original question.
-You will answer only with the new Question no other text must be included.
-question {question}";
+be a standalone question that contains also the previous context. If there is no correlation
+between the conversation and the question you will output the question unchanged.
+You will answer only with the rewritten question no other text must be included.
+Question: {question}";
         chatMessages.AddUserMessage(prompt);
 
         var result = await chatCompletionService.GetChatMessageContentAsync(chatMessages, new PromptExecutionSettings()
@@ -99,7 +100,8 @@ public class HandlebarSemanticKernelQueryRewriter : IConversationQueryRewriter
             Name = "TestRewrite",
             Description = "Rewrite a query for kernel memory.",
             Template = @"system: 
-* Given the following conversation history and the users next question,rephrase the question to be a stand alone question.
+* Given the following conversation history and the users next question, rephrase the 
+follow up input to be a stand alone question.
 If the conversation is irrelevant or empty, just restate the original question.
 Do not add more details than necessary to the question.
 
