@@ -188,6 +188,14 @@ internal class CustomSearchPipelineBase : ISample2
                 {
                     Console.WriteLine("Answer cannot be retrieved.");
                 }
+                else if (userQuestion.Citations?.Count > 0)
+                {
+                    Console.WriteLine("Citations:");
+                    foreach (var citation in userQuestion.Citations)
+                    {
+                        Console.WriteLine("Document: {0}", citation.DocumentId);
+                    }
+                }
             }
         } while (!string.IsNullOrWhiteSpace(question));
     }
