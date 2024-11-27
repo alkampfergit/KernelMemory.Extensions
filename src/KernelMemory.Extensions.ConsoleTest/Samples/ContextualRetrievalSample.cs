@@ -5,11 +5,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DataFormats;
+using Microsoft.KernelMemory.DataFormats.Image;
+using Microsoft.KernelMemory.DataFormats.Office;
+using Microsoft.KernelMemory.DataFormats.Pdf;
+using Microsoft.KernelMemory.DataFormats.Text;
+using Microsoft.KernelMemory.DataFormats.WebPages;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.Handlers;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using Spectre.Console;
+using KernelMemory.Extensions.DocumentExtraction;
 
 namespace SemanticMemory.Samples;
 
@@ -24,7 +30,22 @@ public class ContextualRetrievalSample : ISample
             .AddDebug()
         );
         //do not forget to add decoders
-        services.AddDefaultContentDecoders();
+        //services.AddDefaultContentDecoders();
+        //you can add decoder directly in this way
+        #pragma warning disable KMEXP00 // 'TextDecoder' is for evaluation purposes only and is subject to change or removal in future updates.
+        // services.AddSingleton<IContentDecoder, TextDecoder>();
+        // services.AddSingleton<IContentDecoder, MarkDownDecoder>();
+        // services.AddSingleton<IContentDecoder, HtmlDecoder>();
+
+        // //services.AddSingleton<IContentDecoder, PdfDecoder>();
+        // //services.AddSingleton<IContentDecoder, PdfStructuredDocumentDecoder>();
+
+        // services.AddSingleton<IContentDecoder, ImageDecoder>();
+        // services.AddSingleton<IContentDecoder, MsExcelDecoder>();
+        // services.AddSingleton<IContentDecoder, MsPowerPointDecoder>();
+        // services.AddSingleton<IContentDecoder, MsWordDecoder>();
+        #pragma warning restore KMEXP00
+
         services.AddHttpClient<RawAnthropicHttpClient>()
             .AddStandardResilienceHandler(options =>
             {
@@ -38,7 +59,7 @@ public class ContextualRetrievalSample : ISample
             throw new Exception("ANTHROPIC_API_KEY is not set");
         }
 
-        var config = new AnthropicTextGenerationConfiguration() 
+        var config = new AnthropicTextGenerationConfiguration()
         {
             ApiKey = anthropicApiKey,
         };
@@ -147,14 +168,14 @@ public class ContextualRetrievalSample : ISample
         kernelMemoryBuilder
             .WithSimpleFileStorage(new SimpleFileStorageConfig()
             {
-                //Directory = "/tmp/km/storage",
-                Directory = "c:\\temp\\km2\\storage",
+                Directory = "/tmp/km/storage",
+                //Directory = "c:\\temp\\km2\\storage",
                 StorageType = FileSystemTypes.Disk
             })
             .WithSimpleVectorDb(new SimpleVectorDbConfig()
             {
-                //Directory = "/tmp/km/vectorstorage",
-                Directory = "c:\\temp\\km2\\vectorstorage",
+                Directory = "/tmp/km/vectorstorage",
+                //Directory = "c:\\temp\\km2\\vectorstorage",
                 StorageType = FileSystemTypes.Disk
             });
 
