@@ -37,16 +37,14 @@ public class PdfStructuredDocumentDecoder : IContentDecoder
     public Task<FileContent> DecodeAsync(BinaryData data, CancellationToken cancellationToken = default)
     {
         using var stream = data.ToStream();
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(Stream data, CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting structured text from PDF file");
-        throw new NotImplementedException();
+        _log.LogDebug("Extracting structured text from PDF file");
         var result = _uglyToadStructured.DecodePdf(data);
-        
         return Task.FromResult(result);
     }
 }

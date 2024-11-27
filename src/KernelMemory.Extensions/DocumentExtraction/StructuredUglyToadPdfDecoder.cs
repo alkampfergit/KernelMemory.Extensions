@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using Microsoft.KernelMemory.DataFormats;
 using Microsoft.KernelMemory.Pipeline;
 using UglyToad.PdfPig;
@@ -17,6 +19,7 @@ public class StructuredUglyToadPdfDecoder
 
         Word previous = null;
         var sb = new StringBuilder(1000);
+
         foreach (var page in document.GetPages())
         {
             foreach (var word in page.GetWords())

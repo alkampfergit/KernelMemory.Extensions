@@ -165,6 +165,8 @@ public class ContextualRetrievalSample : ISample
             .WithAzureOpenAITextGeneration(chatConfig)
             .WithAzureOpenAITextEmbeddingGeneration(embeddingConfig);
 
+        kernelMemoryBuilder.WithContentDecoder<PdfStructuredDocumentDecoder>();
+
         kernelMemoryBuilder
             .WithSimpleFileStorage(new SimpleFileStorageConfig()
             {

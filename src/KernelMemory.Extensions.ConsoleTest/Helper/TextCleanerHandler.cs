@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using KernelMemory.Extensions.Helper;
+using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.Pipeline;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace KernelMemory.Extensions.ConsoleTest.Helper;
@@ -68,6 +70,12 @@ internal class TextCleanerHandler : IPipelineStepHandler
                     if (b >= 32 && b <= 255 || b == 13 || b == 10 || char.IsPunctuation(c))
                     {
                         newContent.Append(c);
+                    }
+
+                    //now handle ligatures
+                    if (LigatureHelper.IsLigature(c))
+                    {
+                        newContent.Append(LigatureHelper.ExpandLigature(c));
                     }
                 }
                 await _orchestrator.WriteTextFileAsync(pipeline, file.Name, newContent.ToString(), cancellationToken).ConfigureAwait(false);
