@@ -1,11 +1,9 @@
 using KernelMemory.ElasticSearch.Anthropic;
 using Microsoft.Extensions.Logging;
-using Microsoft.KernelMemory.AI.Anthropic;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.Pipeline;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,14 +30,14 @@ public class ClaudeContextualRetrievalHandler : IPipelineStepHandler
 
     public string StepName => _name;
 
-    public async Task<(bool success, DataPipeline updatedPipeline)> InvokeAsync(DataPipeline pipeline, CancellationToken cancellationToken = default)
+    public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(DataPipeline pipeline, CancellationToken cancellationToken)
     {
         _log.LogDebug("Partitioning text, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         if (pipeline.Files.Count == 0)
         {
             _log.LogWarning("Pipeline '{0}/{1}': there are no files to process, moving to next pipeline step.", pipeline.Index, pipeline.DocumentId);
-            return (true, pipeline);
+            return (ReturnType.Success, pipeline);
         }
 
         foreach (DataPipeline.FileDetails uploadedFile in pipeline.Files)
@@ -86,7 +84,7 @@ public class ClaudeContextualRetrievalHandler : IPipelineStepHandler
                 }
             }
         }
-        return (true, pipeline);
+        return (ReturnType.Success, pipeline);
     }
 
     private async Task<string> EnrichTextAsync(

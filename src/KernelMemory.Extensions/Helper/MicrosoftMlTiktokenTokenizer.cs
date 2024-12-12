@@ -17,7 +17,7 @@ namespace KernelMemory.Extensions.Helper
 
         public MicrosoftMlTiktokenTokenizer(string baseModelName)
         {
-            _tikToken = TiktokenTokenizer.CreateForModel(baseModelName);
+            _tikToken = Microsoft.ML.Tokenizers.TiktokenTokenizer.CreateForModel(baseModelName);
         }
 
         public int CountTokens(string text)

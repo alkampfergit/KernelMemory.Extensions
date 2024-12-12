@@ -1,6 +1,5 @@
 ﻿using KernelMemory.ElasticSearch.Anthropic;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.KernelMemory.AI.Anthropic;
 
 namespace KernelMemory.Extensions.FunctionalTests;
 

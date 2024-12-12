@@ -23,14 +23,14 @@ internal class TextCleanerHandler : IPipelineStepHandler
 
     public string StepName => _name;
 
-    public async Task<(bool success, DataPipeline updatedPipeline)> InvokeAsync(DataPipeline pipeline, CancellationToken cancellationToken = default)
+    public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(DataPipeline pipeline, CancellationToken cancellationToken)
     {
         _log.LogDebug("Partitioning text, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         if (pipeline.Files.Count == 0)
         {
             _log.LogWarning("Pipeline '{0}/{1}': there are no files to process, moving to next pipeline step.", pipeline.Index, pipeline.DocumentId);
-            return (true, pipeline);
+            return (ReturnType.Success, pipeline);
         }
 
         foreach (DataPipeline.FileDetails uploadedFile in pipeline.Files)
@@ -81,6 +81,6 @@ internal class TextCleanerHandler : IPipelineStepHandler
                 uploadedFile.GeneratedFiles.Add(file.Key, file.Value);
             }
         }
-        return (true, pipeline);
+        return (ReturnType.Success, pipeline);
     }
 }
