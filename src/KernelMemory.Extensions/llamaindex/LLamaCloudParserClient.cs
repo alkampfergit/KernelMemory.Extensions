@@ -117,8 +117,8 @@ public class LLamaCloudParserClient
 
 public class CloudParserConfiguration
 {
-    public string? ApiKey { get; internal set; }
-    public string? BaseUrl { get; internal set; } = "https://api.cloud.llamaindex.ai";
+    public string? ApiKey { get; set; }
+    public string? BaseUrl { get; set; } = "https://api.cloud.llamaindex.ai";
 }
 
 /// <summary>

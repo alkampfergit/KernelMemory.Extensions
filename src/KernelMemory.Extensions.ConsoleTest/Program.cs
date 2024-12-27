@@ -22,6 +22,7 @@ public static class Program
         services.AddSingleton<CustomSearchPipelineBase>();
         services.AddSingleton<AnthropicSample>();
         services.AddSingleton<ContextualRetrievalSample>();
+        services.AddSingleton<CustomParsersSample>();
         services.AddHttpClient();
 
         var serviceProvider = services.BuildServiceProvider();
@@ -35,6 +36,7 @@ public static class Program
             ["Custom Search pipeline (Basic)"] = typeof(CustomSearchPipelineBase),
             ["Anthropic"] = typeof(AnthropicSample),
             ["Contextual retrieval"] = typeof(ContextualRetrievalSample),
+            ["Advanced Parsing"] = typeof(CustomParsersSample),
             ["Exit"] = null
         };
 
@@ -64,6 +66,7 @@ public static class Program
                             @"c:\temp\advancedapisecurity.pdf", 
                             @"S:\OneDrive\B19553_11.pdf",
                             @"c:\temp\blackhatpython.pdf",
+                            @"c:\temp\manualeDreame.pdf",
                             @"/Users/gianmariaricci/Downloads/llchaindata/blackhatpython.pdf"]));
                     await sampleInstance1.RunSample(book);
                 }
