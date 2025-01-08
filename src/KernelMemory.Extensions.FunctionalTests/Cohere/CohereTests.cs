@@ -2,7 +2,9 @@
 using KernelMemory.Extensions.Cohere;
 using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.MemoryStorage;
+using Moq;
 
 namespace KernelMemory.Extensions.FunctionalTests.Cohere;
 
@@ -11,6 +13,8 @@ public class CohereTests
     private readonly ServiceProvider _serviceProvider;
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private Mock<IContextProvider> _contextProvider;
+    private Mock<IContext> _context;
 
     public CohereTests()
     {
@@ -30,6 +34,13 @@ public class CohereTests
             {
                 // Configure standard resilience options here
             });
+
+        //Setup contextual provider.
+        _contextProvider = new Mock<IContextProvider>();
+        _context = new Moq.Mock<IContext>();
+        _context.Setup(c => c.Arguments).Returns(new Dictionary<string, object?>());
+        _contextProvider.Setup(c => c.GetContext()).Returns(_context.Object);
+        services.AddSingleton(_contextProvider.Object);
 
         var cohereApiKey = Environment.GetEnvironmentVariable("COHERE_API_KEY");
 

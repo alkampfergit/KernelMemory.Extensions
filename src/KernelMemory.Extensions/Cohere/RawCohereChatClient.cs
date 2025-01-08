@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using KernelMemory.Extensions.Helper;
 using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.Diagnostics;
 
 namespace KernelMemory.Extensions.Cohere;
@@ -17,6 +18,7 @@ namespace KernelMemory.Extensions.Cohere;
 public class RawCohereChatClient
 {
     private readonly HttpClient _httpClient;
+    private readonly IContextProvider _contextProvider;
     private readonly ILogger<RawCohereChatClient> _log;
     private readonly string _apiKey;
     private readonly string _baseUrl;
@@ -24,6 +26,7 @@ public class RawCohereChatClient
     public RawCohereChatClient(
         CohereChatConfiguration config,
         HttpClient httpClient,
+        IContextProvider contextProvider,
         ILogger<RawCohereChatClient>? log = null)
     {
         if (String.IsNullOrEmpty(config.ApiKey))
@@ -31,7 +34,8 @@ public class RawCohereChatClient
             throw new ArgumentException("ApiKey is required", nameof(config.ApiKey));
         }
 
-        this._httpClient = httpClient;
+        _httpClient = httpClient;
+        _contextProvider = contextProvider;
         _log = log ?? DefaultLogger<RawCohereChatClient>.Instance;
         _apiKey = config.ApiKey;
         _baseUrl = config.BaseUrl;
@@ -45,10 +49,7 @@ public class RawCohereChatClient
         CohereRagRequest cohereRagRequest,
         CancellationToken cancellationToken = default)
     {
-        if (cohereRagRequest is null)
-        {
-            throw new ArgumentNullException(nameof(cohereRagRequest));
-        }
+        ArgumentNullException.ThrowIfNull(cohereRagRequest);
 
         if (cohereRagRequest.Stream)
         {
@@ -91,10 +92,9 @@ public class RawCohereChatClient
         CohereRagRequest cohereRagRequest,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (cohereRagRequest is null)
-        {
-            throw new ArgumentNullException(nameof(cohereRagRequest));
-        }
+        ArgumentNullException.ThrowIfNull(cohereRagRequest);
+
+        var context = _contextProvider.GetContext();
 
         var client = _httpClient;
         //force streaming
@@ -130,7 +130,7 @@ public class RawCohereChatClient
                 string line = (await reader.ReadLineAsync(cancellationToken))!;
                 var data = JsonSerializer.Deserialize<ChatStreamEvent>(line)!;
 
-                if (data.EventType == "stream-start" || data.EventType == "stream-end" || data.EventType == "search-results")
+                if (data.EventType == "stream-start" || data.EventType == "search-results")
                 {
                     //not interested in this events
                     continue;
@@ -152,6 +152,11 @@ public class RawCohereChatClient
                         ResponseType = CohereRagResponseType.Citations
                     };
                 }
+                else if (data.EventType == "stream-end") 
+                {
+                    //create log
+                    AddLog(context, "CommandR+RAG", cohereRagRequest.Describe(), data);
+                }
                 else
                 {
                     //not supported.
@@ -159,5 +164,35 @@ public class RawCohereChatClient
                 }
             }
         }
+    }
+
+    private void AddLog(
+        IContext context,
+        string name,
+        string input,
+        ChatStreamEvent data)
+    {
+        LLMCallLog callLog = new()
+        {
+            CallName = name,
+            ReturnObject = data,
+            InputPrompt = input,
+            Output = data.Response.Text,
+            TokenCount = new TokenCount()
+            {
+                InputTokens = data.Response?.Meta.Tokens.InputTokens ?? 0,
+                OutputTokens = data.Response?.Meta.Tokens.OutputTokens ?? 0,
+            }
+        };
+
+        if (data.Response?.Meta.Warnings?.Length > 0)
+        {
+            foreach (var warning in data.Response.Meta.Warnings)
+            {
+                callLog.AddWarning(warning);
+            }
+        }
+
+        context.AddCallLog(callLog);
     }
 }

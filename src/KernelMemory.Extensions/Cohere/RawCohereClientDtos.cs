@@ -1,5 +1,8 @@
 ﻿using Microsoft.KernelMemory.MemoryStorage;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace KernelMemory.Extensions.Cohere;
@@ -43,14 +46,49 @@ public class CohereRagRequest
 
         foreach (var memory in memoryRecords)
         {
+            //if the text is more than 300 words we need to split it
+            var text = memory.GetPartitionText();
+            int start = 0;
+            int spaceCount = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == ' ')
+                {
+                    spaceCount++;
+                }
+                if (spaceCount > 250)
+                {
+                    ragRequest.Documents.Add(new RagDocument()
+                    {
+                        DocId = memory.Id,
+                        Text = text[start..i]
+                    });
+                    start = i;
+                    spaceCount = 0;
+                }
+            }
+
             ragRequest.Documents.Add(new RagDocument()
             {
                 DocId = memory.Id,
-                Text = memory.GetPartitionText()
+                Text = text[start..text.Length]
             });
         }
 
         return ragRequest;
+    }
+
+    internal string Describe()
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine($"Message: {Message}");
+        stringBuilder.AppendLine($"Model: {Model}");
+        stringBuilder.AppendLine($"Document count: {Documents.Count}");
+        stringBuilder.AppendLine($"Temperature: {Temperature}");
+        stringBuilder.AppendLine($"Stream: {Stream}");
+        stringBuilder.AppendLine($"\n\nFullDocuments\n{string.Join("\n", Documents.Select(d => d.Text))}");
+
+        return stringBuilder.ToString();
     }
 
     [JsonPropertyName("message")]
@@ -321,6 +359,30 @@ public class ChatStreamEvent
 
     [JsonPropertyName("citations")]
     public List<CohereRagCitation> Citations { get; set; }
+
+    [JsonPropertyName("response")]
+    public ChatStreamingResponse Response { get; set; }
+}
+
+public class ChatStreamingResponse
+{
+    [JsonPropertyName("response_id")]
+    public string ResponseId { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonPropertyName("generation_id")]
+    public string GenerationId { get; set; }
+
+    [JsonPropertyName("chat_history")]
+    public List<ChatMessage> ChatHistory { get; set; }
+
+    [JsonPropertyName("finish_reason")]
+    public string FinishReason { get; set; }
+
+    [JsonPropertyName("meta")]
+    public Meta Meta { get; set; }
 }
 
 public class CohereRagCitation

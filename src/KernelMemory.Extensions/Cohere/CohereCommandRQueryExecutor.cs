@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryStorage;
+using Polly.Fallback;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -47,15 +48,18 @@ public class CohereCommandRQueryExecutor : BasicAsyncQueryHandlerWithProgress
 
     private readonly RawCohereClient _rawCohereClient;
     private readonly CohereCommandRQueryExecutorConfiguration _config;
+    private readonly CohereTokenizer _cohereTokenizer;
     private readonly ILogger<StandardRagQueryExecutor> _log;
 
     public CohereCommandRQueryExecutor(
         RawCohereClient rawCohereClient,
         CohereCommandRQueryExecutorConfiguration config,
+        CohereTokenizer cohereTokenizer,
         ILogger<StandardRagQueryExecutor>? log = null)
     {
         _rawCohereClient = rawCohereClient;
         _config = config;
+        _cohereTokenizer = cohereTokenizer;
         _log = log ?? DefaultLogger<StandardRagQueryExecutor>.Instance;
     }
 

@@ -221,6 +221,15 @@ internal class CustomSearchPipelineBase : ISample2
                                     call.TokenCount.CachedTokenRead,
                                     call.TokenCount.CachedTokenWrite);
                             }
+
+                            if (call.Warnings.Count > 0)
+                            {
+                                Console.WriteLine("Warnings:");
+                                foreach (var warning in call.Warnings)
+                                {
+                                    Console.WriteLine(warning);
+                                }
+                            }
                         }
                     }
                     else
@@ -351,6 +360,7 @@ internal class CustomSearchPipelineBase : ISample2
 
         services.AddSingleton<IKernelMemoryBuilder>(kernelMemoryBuilder);
         services.AddSingleton<CohereReRanker>();
+
         services.AddSingleton<HandlebarSemanticKernelQueryRewriter>();
         services.AddSingleton<SemanticKernelQueryRewriter>();
         services.AddSingleton<StandardVectorSearchQueryHandler>();

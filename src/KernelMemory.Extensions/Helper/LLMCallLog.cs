@@ -2,6 +2,7 @@ using Microsoft.KernelMemory.Context;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenAI.Chat;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,6 +20,10 @@ public class LLMCallLog
     public string? Output { get; set; }
 
     public object? ReturnObject { get; set; }
+
+    public IReadOnlyList<string> Warnings => _warnings;
+
+    private readonly List<string> _warnings = new();
 
     public TokenCount TokenCount { get; set; } = null!;
 
@@ -50,6 +55,11 @@ public class LLMCallLog
             };
         }
     }
+
+    public void AddWarning(string warning)
+    {
+        _warnings.Add(warning);
+    }
 }
 
 public class TokenCount
@@ -66,6 +76,8 @@ public class TokenCount
 /// </summary>
 public class LLMCallLogContext
 {
+    public Guid Id { get; private set; } = Guid.NewGuid();
+
     public IReadOnlyList<LLMCallLog> CallLogs => _callLogs;
 
     private readonly List<LLMCallLog> _callLogs = new();

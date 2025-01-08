@@ -111,6 +111,8 @@ public static class CohereConfigurationHelper
             BaseUrl = baseUrl,
         });
 
+        services.AddSingleton<CohereTokenizer>();
+
         return services;
     }
 

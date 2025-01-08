@@ -18,6 +18,7 @@ namespace KernelMemory.Extensions.Helper;
 public interface ISemanticKernelWrapper
 {
     KernelFunction CreateFunctionFromMethod(Delegate method, string functionName);
+
     KernelPlugin CreateFromFunctions(string pluginName, IEnumerable<KernelFunction> functions);
 
     KernelFunction CreateFunctionFromPrompt(PromptTemplateConfig config, IPromptTemplateFactory? promptTemplateFactory = null);
