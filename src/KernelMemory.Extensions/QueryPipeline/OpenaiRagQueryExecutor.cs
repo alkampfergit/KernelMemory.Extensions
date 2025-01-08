@@ -24,7 +24,7 @@ public class OpenAIRagQueryExecutorConfiguration
     /// the default <see cref="ModelId"/> automatically
     /// we will use a standard gpt3.5 model
     /// </summary>
-    public string ModelName { get; set; } = "gpt35";
+    public string ModelName { get; set; } = "gpt-35";
 
     /// <summary>
     /// This is the modelId configured in Semantic Kernel 
@@ -63,16 +63,26 @@ public class OpenaiRagQueryExecutor : BasicQueryHandler
     private readonly OpenAIRagQueryExecutorConfiguration _config;
     private readonly Tokenizer _tokenizer;
     private readonly ILogger<StandardRagQueryExecutor> _log;
+    private readonly IPromptStore _promptStore;
+
+    private const string DefaultPrompt = @"You are an AI assistant that helps users answer questions given a specific context. You will be given a context and asked a question based on that context. Your answer should be as precise as possible and should only come from the context.
+Please add all documents used as citations.
+Question: {{$question}}
+
+Documents:
+{{$documents}}";
 
     public OpenaiRagQueryExecutor(
         Kernel kernel,
         OpenAIRagQueryExecutorConfiguration? config = null,
-        ILogger<StandardRagQueryExecutor>? log = null)
+        ILogger<StandardRagQueryExecutor>? log = null,
+        IPromptStore? promptStore = null)
     {
         _kernel = kernel;
         _config = config ?? new OpenAIRagQueryExecutorConfiguration();
         _tokenizer = TiktokenTokenizer.CreateForModel(_config.ModelName);
         _log = log ?? DefaultLogger<StandardRagQueryExecutor>.Instance;
+        _promptStore = promptStore ?? NullPromptStore.Instance;
     }
 
     protected override async Task OnHandleAsync(
@@ -170,9 +180,9 @@ public class OpenaiRagQueryExecutor : BasicQueryHandler
 
     private class GptAnswer
     {
-        public string Answer { get; set; }
+        public string Answer { get; set; } = null!;
 
-        public HashSet<int> Documents { get; set; }
+        public HashSet<int> Documents { get; set; } = null!;
     }
 
     /// <summary>
@@ -194,22 +204,19 @@ public class OpenaiRagQueryExecutor : BasicQueryHandler
             [Description("Answer of the question")] string answer,
             [Description("Documents used to formulate the answer")] int[] documents
         ) =>
-        {
-        }, "return_result");
+            {
+            }, "return_result");
         var plugin = KernelPluginFactory.CreateFromFunctions("MyPlugin", [function]);
         var openAIFunction = plugin.GetFunctionsMetadata().First().ToOpenAIFunction();
+
+        string prompt = await GetPromptAsync();
 
         // Create a template for chat with settings
         var chat = _kernel.CreateFunctionFromPrompt(new PromptTemplateConfig()
         {
             Name = "Rag",
             Description = "Answer user question with documents.",
-            Template = @"You are an AI assistant that helps users answer questions given a specific context. You will be given a context and asked a question based on that context. Your answer should be as precise as possible and should only come from the context.
-Please add all documents used as citations.
-Question: {{$question}}
-
-Documents:
-{{$documents}}",
+            Template = prompt,
             TemplateFormat = "semantic-kernel",
             InputVariables =
             [
@@ -251,5 +258,28 @@ Documents:
         }
 
         return null;
+    }
+
+    private async Task<string> GetPromptAsync()
+    {
+        var prompt = await _promptStore.GetPromptAsync(nameof(OpenaiRagQueryExecutor));
+        if (prompt == null)
+        {
+            //Set the default prompt into the storage so the user can change.
+            await _promptStore.SetPromptAsync(nameof(OpenaiRagQueryExecutor), DefaultPrompt);
+            prompt = DefaultPrompt;
+        }
+
+        if (!prompt.Contains("{{$question}}"))
+        {
+            _log.LogError("The prompt does not contain {{$question}} placeholder, the prompt will not work correctly");
+        }
+
+        if (!prompt.Contains("{{$documents}}"))
+        {
+            _log.LogError("The prompt does not contain {{$documents}} placeholder, the prompt will not work correctly");
+        }
+
+        return prompt;
     }
 }
