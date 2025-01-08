@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Moq;
 using Fasterflect;
+using KernelMemory.Extensions.Helper;
 
 namespace KernelMemory.Extensions.FunctionalTests.Helper;
 
@@ -12,13 +13,15 @@ public class OpenaiRagQueryExecutorTests
     private OpenaiRagQueryExecutor _sut;
     private Mock<IPromptStore> _mockPromptStore;
     private Mock<ILogger<StandardRagQueryExecutor>> _mockLogger;
+    private Mock<ISemanticKernelWrapper> _mockKernel;
 
     public OpenaiRagQueryExecutorTests()
     {
         _kernel = new Kernel();
         _mockPromptStore = new Mock<IPromptStore>();
         _mockLogger = new Mock<ILogger<StandardRagQueryExecutor>>();
-        _sut = new OpenaiRagQueryExecutor(_kernel, new OpenAIRagQueryExecutorConfiguration(), _mockLogger.Object, _mockPromptStore.Object);
+        _mockKernel = new Mock<ISemanticKernelWrapper>();
+        _sut = new OpenaiRagQueryExecutor(_mockKernel.Object, new OpenAIRagQueryExecutorConfiguration(), _mockLogger.Object, _mockPromptStore.Object);
     }
 
     [Fact]

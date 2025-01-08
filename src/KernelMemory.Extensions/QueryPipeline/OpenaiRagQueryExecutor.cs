@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using KernelMemory.Extensions.Helper;
+using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.ML.Tokenizers;
@@ -59,7 +60,7 @@ public class OpenaiRagQueryExecutor : BasicQueryHandler
 {
     public override string Name => "OpenaiRagQueryExecutor";
 
-    private readonly Kernel _kernel;
+    private readonly ISemanticKernelWrapper _wrapper;
     private readonly OpenAIRagQueryExecutorConfiguration _config;
     private readonly Tokenizer _tokenizer;
     private readonly ILogger<StandardRagQueryExecutor> _log;
@@ -73,12 +74,12 @@ Documents:
 {{$documents}}";
 
     public OpenaiRagQueryExecutor(
-        Kernel kernel,
+        ISemanticKernelWrapper wrapper,
         OpenAIRagQueryExecutorConfiguration? config = null,
         ILogger<StandardRagQueryExecutor>? log = null,
         IPromptStore? promptStore = null)
     {
-        _kernel = kernel;
+        _wrapper = wrapper;
         _config = config ?? new OpenAIRagQueryExecutorConfiguration();
         _tokenizer = TiktokenTokenizer.CreateForModel(_config.ModelName);
         _log = log ?? DefaultLogger<StandardRagQueryExecutor>.Instance;
@@ -199,20 +200,20 @@ Documents:
         CancellationToken token)
     {
         //First step is creating the function in Semantic Kernel.
-        var function = KernelFunctionFactory.CreateFromMethod(
+        var function = _wrapper.CreateFunctionFromMethod(
             [Description("Return the result to the user")] (
             [Description("Answer of the question")] string answer,
             [Description("Documents used to formulate the answer")] int[] documents
         ) =>
             {
             }, "return_result");
-        var plugin = KernelPluginFactory.CreateFromFunctions("MyPlugin", [function]);
+        var plugin = _wrapper.CreateFromFunctions("MyPlugin", new[] { function });
         var openAIFunction = plugin.GetFunctionsMetadata().First().ToOpenAIFunction();
 
         string prompt = await GetPromptAsync();
 
         // Create a template for chat with settings
-        var chat = _kernel.CreateFunctionFromPrompt(new PromptTemplateConfig()
+        var chat = _wrapper.CreateFunctionFromPrompt(new PromptTemplateConfig()
         {
             Name = "Rag",
             Description = "Answer user question with documents.",
@@ -240,7 +241,7 @@ Documents:
         KernelArguments ka = new();
         ka["question"] = question;
         ka["documents"] = documents;
-        var result = await _kernel.InvokeAsync(chat, ka, token);
+        var result = await _wrapper.InvokeAsync($"RAG QUERY {nameof(OpenaiRagQueryExecutor)}", chat, ka, token);
 
         var openaiMessageContent = result.GetValue<OpenAIChatMessageContent>();
         if (result is FunctionResult fre)

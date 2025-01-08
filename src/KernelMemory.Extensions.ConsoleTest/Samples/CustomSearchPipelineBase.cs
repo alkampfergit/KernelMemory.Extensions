@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage;
@@ -84,7 +85,7 @@ internal class CustomSearchPipelineBase : ISample2
         var queryExecutorToUse = AnsiConsole.Prompt(new SelectionPrompt<string>()
             .Title("Select the query executor to use")
             .AddChoices([
-                "KernelMemory Default", 
+                "KernelMemory Default",
                 "Cohere CommandR+",
                 "OpenAI Tool"]));
 
@@ -105,6 +106,7 @@ internal class CustomSearchPipelineBase : ISample2
         var kernel = kernelBuider.Build();
 
         //Add semantic kernel in DI
+        services.AddSingleton<ISemanticKernelWrapper, SemanticKernelWrapper>();
         services.AddSingleton(kernel);
 
         var serviceProvider = services.BuildServiceProvider();
@@ -125,6 +127,7 @@ internal class CustomSearchPipelineBase : ISample2
         // now ask a question to the user continuously until the user ask an empty question
         string? question;
         UserQuestion userQuestion = null;
+        var contextAccessor = serviceProvider.GetRequiredService<IContextProvider>();
         do
         {
             bool shouldDumpRewrittenQuery = false;
@@ -194,6 +197,35 @@ internal class CustomSearchPipelineBase : ISample2
                     foreach (var citation in userQuestion.Citations)
                     {
                         Console.WriteLine("Document: {0}", citation.DocumentId);
+                    }
+                }
+
+                //ask if we want details
+                var details = AnsiConsole.Confirm("Do you want to see the details of the question? (y/n)", false);
+                if (details)
+                {
+                    if (userQuestion.CallContext != null)
+                    {
+                        Console.WriteLine("Number of LLM calls: {0}", userQuestion.CallContext.CallLogs.Count);
+                        foreach (var call in userQuestion.CallContext.CallLogs)
+                        {
+                            Console.WriteLine("\nCall Name: {0}", call.CallName);
+                            Console.WriteLine("Prompt: {0}\n\n", call.InputPrompt);
+                            Console.WriteLine("Output: {0}", call.Output);
+                            if (call.TokenCount != null)
+                            {
+                                Console.WriteLine(
+                                    "\n******Token Count: Input: {0} Output: {1} CachedRead: {2} CachedWrite {3}*****",
+                                    call.TokenCount.InputTokens,
+                                    call.TokenCount.OutputTokens,
+                                    call.TokenCount.CachedTokenRead,
+                                    call.TokenCount.CachedTokenWrite);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No details available");
                     }
                 }
             }

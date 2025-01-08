@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.KernelMemory.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace KernelMemory.Extensions.QueryPipeline
             }
 
             //we need to create the pipeline
-            var pipeline = new UserQuestionPipeline();
+            var pipeline = new UserQuestionPipeline(_serviceProvider.GetRequiredService<IContextProvider>());
 
             //we need to get the configuration
             var uqpc = _serviceProvider.GetRequiredKeyedService<UserQuestionPipelineConfiguration>(pipelineName

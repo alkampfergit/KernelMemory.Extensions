@@ -2,6 +2,7 @@ using KernelMemory.Extensions.FunctionalTests.TestUtilities;
 using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.MemoryStorage;
 using Moq;
 
@@ -10,6 +11,7 @@ namespace KernelMemory.Extensions.FunctionalTests.QueryPipeline;
 public class UserQuestionPipelineTests
 {
     private const string AnswerHandlerValue = "AnswerHandler";
+    private static Mock<IContextProvider> _mock;
 
     [Fact]
     public async Task Null_query_has_no_answer()
@@ -348,16 +350,12 @@ public class UserQuestionPipelineTests
 
     private static UserQuestionPipeline GenerateSut()
     {
-        return new UserQuestionPipeline();
+        _mock = new Mock<IContextProvider>();
+        return new UserQuestionPipeline(_mock.Object);
     }
 
     private class BaseAnswerSimulator : BasicQueryHandler
     {
-        public BaseAnswerSimulator()
-        {
-
-        }
-
         public override string Name => nameof(BaseAnswerSimulator);
 
         protected override async Task OnHandleAsync(UserQuestion userQuestion, CancellationToken cancellationToken)

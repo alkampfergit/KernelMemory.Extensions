@@ -1,3 +1,5 @@
+using Microsoft.KernelMemory.Context;
+using Moq;
 using System.Runtime.CompilerServices;
 
 namespace KernelMemory.Extensions.FunctionalTests.QueryPipeline;
@@ -36,7 +38,8 @@ public class AsyncUserQuestionPipelineTests
 
     private static UserQuestionPipeline GenerateSut()
     {
-        return new UserQuestionPipeline();
+        var mock = new Mock<IContextProvider>();
+        return new UserQuestionPipeline(mock.Object);
     }
 
     private class SimpleTextGeneratorAsync : BasicAsyncQueryHandlerWithProgress

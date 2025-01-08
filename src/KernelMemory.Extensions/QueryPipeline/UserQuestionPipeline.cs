@@ -1,5 +1,7 @@
-﻿using KernelMemory.Extensions.QueryPipeline;
+﻿using KernelMemory.Extensions.Helper;
+using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.Diagnostics;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,14 @@ public class UserQuestionPipeline
 
     private IReRanker _reRanker = new BaseReRanker();
     private IConversationQueryRewriter? _conversationQueryRewriter;
+    private readonly IContextProvider _contextProvider;
     private ILogger<UserQuestionPipeline> _log;
 
-    public UserQuestionPipeline(ILogger<UserQuestionPipeline>? log = null)
+    public UserQuestionPipeline(
+        IContextProvider contextProvider,
+        ILogger<UserQuestionPipeline>? log = null)
     {
+        _contextProvider = contextProvider;
         _log = log ?? DefaultLogger<UserQuestionPipeline>.Instance;
     }
 
@@ -54,6 +60,9 @@ public class UserQuestionPipeline
     /// <returns></returns>
     public async IAsyncEnumerable<UserQuestionProgress> ExecuteQueryAsync(UserQuestion userQuestion, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        LLMCallLogContext context = _contextProvider.InitializeCallLogContext();
+        userQuestion.CallContext = null;
+
         await PreProcessQuestion(userQuestion);
 
         //this is a completely different way to interact with the question, each handler should implement
@@ -88,14 +97,20 @@ public class UserQuestionPipeline
 
             yield return new UserQuestionProgress(UserQuestionProgressType.PipelineCompleted, "Pipeline completed");
         }
+
+        userQuestion.CallContext = context;
     }
 
     public async Task ExecuteQuery(UserQuestion userQuestion, CancellationToken cancellationToken)
     {
+        userQuestion.CallContext = null;
+
         if (string.IsNullOrWhiteSpace(userQuestion.Question))
         {
             return;
         }
+        
+        _contextProvider.InitializeCallLogContext();
 
         await PreProcessQuestion(userQuestion);
 
@@ -121,6 +136,8 @@ public class UserQuestionPipeline
                 break;
             }
         }
+
+        userQuestion.CallContext = _contextProvider.GetCallLogContext();
     }
 
     private async Task PreProcessQuestion(UserQuestion userQuestion)

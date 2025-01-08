@@ -1,6 +1,7 @@
 ﻿using Fasterflect;
 using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.MemoryStorage;
 using Moq;
 
@@ -33,6 +34,11 @@ public class UserQuestionPipelineFactoryTests
 
         var mdb = new Mock<IMemoryDb>();
         serviceCollection.AddSingleton(mdb.Object);
+        serviceCollection.AddSingleton(s =>
+        {
+            var mock = new Mock<IContextProvider>();
+            return mock.Object;
+        });
 
         serviceCollection.AddKernelMemoryUserQuestionPipeline(config =>
         {
@@ -61,6 +67,11 @@ public class UserQuestionPipelineFactoryTests
         ServiceCollection serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton<StandardVectorSearchQueryHandler>();
         serviceCollection.AddSingleton<TestReRanker>();
+        serviceCollection.AddSingleton(s =>
+        {
+            var mock = new Mock<IContextProvider>();
+            return mock.Object;
+        });
 
         var mdb = new Mock<IMemoryDb>();
         serviceCollection.AddSingleton(mdb.Object);
@@ -90,6 +101,11 @@ public class UserQuestionPipelineFactoryTests
         ServiceCollection serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton<StandardVectorSearchQueryHandler>();
         serviceCollection.AddSingleton<TestReRanker>();
+        serviceCollection.AddSingleton(s => 
+        {
+            var mock = new Mock<IContextProvider>();
+            return mock.Object;
+        });
         serviceCollection.AddSingleton<TestQueryRewriter>();
 
         var mdb = new Mock<IMemoryDb>();
@@ -128,6 +144,11 @@ public class UserQuestionPipelineFactoryTests
         serviceCollection.AddKeyedSingleton("1", mdb1.Object);
         var mdb2 = new Mock<IMemoryDb>();
         serviceCollection.AddKeyedSingleton("2", mdb2.Object);
+        serviceCollection.AddSingleton(s =>
+        {
+            var mock = new Mock<IContextProvider>();
+            return mock.Object;
+        });
 
         //I register handler with key "2" and it depends on IMemoryDb with key "2"
         serviceCollection.AddKeyedSingleton("2", (serviceProvider, _) =>

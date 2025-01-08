@@ -40,9 +40,9 @@ public class NullPromptStore : IPromptStore
     /// </summary>
     /// <param name="key">The key for which the prompt is requested.</param>
     /// <returns>An empty prompt.</returns>
-    public Task<string> GetPromptAsync(string key)
+    public Task<string?> GetPromptAsync(string key)
     {
-        return Task.FromResult(string.Empty);
+        return Task.FromResult<string?>(null);
     }
 
     /// <summary>
@@ -56,4 +56,3 @@ public class NullPromptStore : IPromptStore
         return Task.CompletedTask;
     }
 }
-

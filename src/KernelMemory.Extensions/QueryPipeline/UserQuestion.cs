@@ -1,4 +1,5 @@
-﻿using KernelMemory.Extensions.QueryPipeline;
+﻿using KernelMemory.Extensions.Helper;
+using KernelMemory.Extensions.QueryPipeline;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
 using System;
@@ -135,6 +136,8 @@ public class UserQuestion
     /// The <see cref="IQueryHandler"/> that answered the question
     /// </summary>
     public string? AnswerHandler { get; internal set; }
+
+    public LLMCallLogContext? CallContext { get; set; }
 
     public UserQuestion(
         UserQueryOptions userQueryOptions,

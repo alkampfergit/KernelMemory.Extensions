@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel;
+﻿using KernelMemory.Extensions.Helper;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
@@ -27,11 +28,11 @@ public interface IConversationQueryRewriter
 public class SemanticKernelQueryRewriter : IConversationQueryRewriter
 {
     private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
-    private readonly Kernel _kernel;
+    private readonly ISemanticKernelWrapper _kernel;
 
     public SemanticKernelQueryRewriter(
         SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
-        Kernel kernel)
+        ISemanticKernelWrapper kernel)
     {
         _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
         _kernel = kernel;
@@ -39,7 +40,7 @@ public class SemanticKernelQueryRewriter : IConversationQueryRewriter
 
     public async Task<string> RewriteAsync(Conversation conversation, string question)
     {
-        var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
+        var chatCompletionService = _kernel.GetChatCompletionService();
 
         ChatHistory chatMessages = new();
 
@@ -84,12 +85,12 @@ public class SemanticKernelQueryRewriterOptions
 public class HandlebarSemanticKernelQueryRewriter : IConversationQueryRewriter
 {
     private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
-    private readonly Kernel _kernel;
+    private readonly ISemanticKernelWrapper _kernel;
     private readonly KernelFunction _chatFunction;
 
     public HandlebarSemanticKernelQueryRewriter(
         SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
-        Kernel kernel)
+        ISemanticKernelWrapper kernel)
     {
         _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
         _kernel = kernel;
@@ -142,7 +143,7 @@ Standalone Question:",
 
         ka["history"] = conversation.GetQuestions();
 
-        var result = await _kernel.InvokeAsync(_chatFunction, ka);
+        var result = await _kernel.InvokeAsync("RewriteQuery", _chatFunction, ka);
 
         return result?.ToString() ?? question;
     }
