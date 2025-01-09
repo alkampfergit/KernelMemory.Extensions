@@ -9,15 +9,14 @@ namespace KernelMemory.Extensions.FunctionalTests.Helper;
 
 public class OpenaiRagQueryExecutorTests
 {
-    private Kernel _kernel;
-    private OpenaiRagQueryExecutor _sut;
-    private Mock<IPromptStore> _mockPromptStore;
-    private Mock<ILogger<StandardRagQueryExecutor>> _mockLogger;
-    private Mock<ISemanticKernelWrapper> _mockKernel;
+    private readonly OpenaiRagQueryExecutor _sut;
+    private readonly Mock<IPromptStore> _mockPromptStore;
+    private readonly Mock<ILogger<StandardRagQueryExecutor>> _mockLogger;
+    private readonly Mock<ISemanticKernelWrapper> _mockKernel;
 
     public OpenaiRagQueryExecutorTests()
     {
-        _kernel = new Kernel();
+        var kernel = new Kernel();
         _mockPromptStore = new Mock<IPromptStore>();
         _mockLogger = new Mock<ILogger<StandardRagQueryExecutor>>();
         _mockKernel = new Mock<ISemanticKernelWrapper>();
@@ -29,7 +28,7 @@ public class OpenaiRagQueryExecutorTests
     {
         // Arrange
         var expectedPrompt = "Test Prompt";
-        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>())).ReturnsAsync(expectedPrompt);
+        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(expectedPrompt);
 
         // Act
         var task = (Task<string>)_sut.CallMethod("GetPromptAsync");
@@ -44,7 +43,7 @@ public class OpenaiRagQueryExecutorTests
     {
         // Arrange
         var invalidPrompt = "Invalid Prompt";
-        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>())).ReturnsAsync(invalidPrompt);
+        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(invalidPrompt);
 
         // Act
         var task = (Task<string>)_sut.CallMethod("GetPromptAsync");
@@ -73,7 +72,7 @@ public class OpenaiRagQueryExecutorTests
 
          // verify that store method of Ipromptstore is not called
         _mockPromptStore.Verify(
-            store => store.SetPromptAsync(It.IsAny<string>(), It.IsAny<string>()),
+            store => store.SetPromptAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -81,7 +80,7 @@ public class OpenaiRagQueryExecutorTests
     public async Task If_prompt_not_saved_reload()
     {
         // Arrange
-        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>())).ReturnsAsync((String?) null); 
+        _mockPromptStore.Setup(store => store.GetPromptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((String?) null); 
 
         // Act
         var task = (Task<string>)_sut.CallMethod("GetPromptAsync");
@@ -90,7 +89,7 @@ public class OpenaiRagQueryExecutorTests
         // Assert
         // verify that store method of Ipromptstore is called
         _mockPromptStore.Verify(
-            store => store.SetPromptAsync("OpenaiRagQueryExecutor", It.IsAny<string>()),
+            store => store.SetPromptAsync("OpenaiRagQueryExecutor", It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

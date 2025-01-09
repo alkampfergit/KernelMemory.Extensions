@@ -3,7 +3,13 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Threading;
+using UglyToad.PdfPig.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Diagnostics;
 
 namespace KernelMemory.Extensions.QueryPipeline;
 
@@ -22,23 +28,29 @@ public interface IConversationQueryRewriter
     /// <param name="question">The question to rewrite</param>
     /// <returns>The rewritten question, now that question is a standalone
     /// question that contains also the previous context.</returns>
-    Task<string> RewriteAsync(Conversation conversation, string question);
+    Task<string> RewriteAsync(Conversation conversation, string question, CancellationToken  cancellationToken = default);
 }
 
 public class SemanticKernelQueryRewriter : IConversationQueryRewriter
 {
     private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
+    private readonly IPromptStore _promptStore;
     private readonly ISemanticKernelWrapper _kernel;
+    private readonly ILogger<SemanticKernelQueryRewriter> _log;
 
     public SemanticKernelQueryRewriter(
         SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
-        ISemanticKernelWrapper kernel)
+        IPromptStore promptStore,
+        ISemanticKernelWrapper kernel,
+        ILogger<SemanticKernelQueryRewriter>? log = null)
     {
         _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
+        _promptStore = promptStore;
         _kernel = kernel;
+        _log = log ?? DefaultLogger<SemanticKernelQueryRewriter>.Instance;
     }
 
-    public async Task<string> RewriteAsync(Conversation conversation, string question)
+    public async Task<string> RewriteAsync(Conversation conversation, string question, CancellationToken  cancellationToken = default)
     {
         var chatCompletionService = _kernel.GetChatCompletionService();
 
@@ -56,17 +68,23 @@ public class SemanticKernelQueryRewriter : IConversationQueryRewriter
                 chatMessages.AddAssistantMessage("I do not know the answer");
             }
         }
-        string prompt = $@"You will reformulate the question based on the conversation up to this point so the question will
+        string defPrompt = $@"You will reformulate the question based on the conversation up to this point so the question will
 be a standalone question that contains also the previous context. If there is no correlation
 between the conversation and the question you will output the question unchanged.
 You will answer only with the rewritten question no other text must be included.
 Question: {question}";
+        var prompt = await _promptStore.GetPromptAndSetDefaultAsync("SemanticKernelQueryRewriter", defPrompt, cancellationToken);
         chatMessages.AddUserMessage(prompt);
 
-        var result = await chatCompletionService.GetChatMessageContentAsync(chatMessages, new PromptExecutionSettings()
-        {
-            ModelId = _semanticKernelQueryRewriterOptions.ModelId
-        });
+        var result = await chatCompletionService!.GetChatMessageContentAsync(
+            chatMessages,
+            executionSettings: new PromptExecutionSettings()
+            {
+                ModelId = _semanticKernelQueryRewriterOptions.ModelId
+            },
+            kernel: null,
+            cancellationToken: cancellationToken
+        );
 
         return result?.ToString() ?? question;
     }
@@ -84,23 +102,7 @@ public class SemanticKernelQueryRewriterOptions
 
 public class HandlebarSemanticKernelQueryRewriter : IConversationQueryRewriter
 {
-    private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
-    private readonly ISemanticKernelWrapper _kernel;
-    private readonly KernelFunction _chatFunction;
-
-    public HandlebarSemanticKernelQueryRewriter(
-        SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
-        ISemanticKernelWrapper kernel)
-    {
-        _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
-        _kernel = kernel;
-
-        // Create a template for chat with settings
-        _chatFunction = kernel.CreateFunctionFromPrompt(new PromptTemplateConfig()
-        {
-            Name = "TestRewrite",
-            Description = "Rewrite a query for kernel memory.",
-            Template = @"system: 
+    private const string DefaultPromptTemplate = @"system: 
 * Given the following conversation history and the users next question, rephrase the 
 follow up input to be a stand alone question.
 If the conversation is irrelevant or empty, just restate the original question.
@@ -115,7 +117,32 @@ answer:
 {{/each}}
 
 Follow up Input: {{ chat_input }} 
-Standalone Question:",
+Standalone Question:";
+
+    private readonly ConcurrentDictionary<string, KernelFunction> _functionCache = new();
+    private readonly SemanticKernelQueryRewriterOptions _semanticKernelQueryRewriterOptions;
+    private readonly ISemanticKernelWrapper _kernel;
+    private readonly IPromptStore _promptStore;
+
+    public HandlebarSemanticKernelQueryRewriter(
+        SemanticKernelQueryRewriterOptions semanticKernelQueryRewriterOptions,
+        ISemanticKernelWrapper kernel,
+        IPromptStore promptStore)
+    {
+        _semanticKernelQueryRewriterOptions = semanticKernelQueryRewriterOptions;
+        _kernel = kernel;
+        _promptStore = promptStore;
+    }
+
+    private async Task<KernelFunction> CreateRewriteFunction(CancellationToken  cancellationToken = default)
+    {
+        var template = await _promptStore.GetPromptAndSetDefaultAsync("HandlebarSemanticKernelQueryRewriter", DefaultPromptTemplate, cancellationToken);
+        
+        return _functionCache.GetOrAdd(template, _ => _kernel.CreateFunctionFromPrompt(new PromptTemplateConfig()
+        {
+            Name = "TestRewrite",
+            Description = "Rewrite a query for kernel memory.",
+            Template = template,
             TemplateFormat = "handlebars",
             InputVariables =
             [
@@ -133,17 +160,17 @@ Standalone Question:",
                 },
             }
         },
-        promptTemplateFactory: new HandlebarsPromptTemplateFactory());
+        promptTemplateFactory: new HandlebarsPromptTemplateFactory()));
     }
 
-    public async Task<string> RewriteAsync(Conversation conversation, string question)
+    public async Task<string> RewriteAsync(Conversation conversation, string question, CancellationToken  cancellationToken = default)
     {
         KernelArguments ka = new();
         ka["chat_input"] = question;
-
         ka["history"] = conversation.GetQuestions();
 
-        var result = await _kernel.InvokeAsync("RewriteQuery", _chatFunction, ka);
+        var chatFunction = await CreateRewriteFunction();
+        var result = await _kernel.InvokeAsync("RewriteQuery", chatFunction, ka);
 
         return result?.ToString() ?? question;
     }

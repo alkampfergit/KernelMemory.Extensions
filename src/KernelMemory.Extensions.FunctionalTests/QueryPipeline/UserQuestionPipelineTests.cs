@@ -175,7 +175,7 @@ public class UserQuestionPipelineTests
 
         //Generate mock for conversation rewriter
         var conversationRewriterMock = new Mock<IConversationQueryRewriter>();
-        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>()))
+        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult("New rewritten question"));
         sut.SetConversationQueryRewriter(conversationRewriterMock.Object);
 
@@ -199,7 +199,7 @@ public class UserQuestionPipelineTests
 
         //Generate mock for conversation rewriter
         var conversationRewriterMock = new Mock<IConversationQueryRewriter>();
-        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>()))
+        conversationRewriterMock.Setup(x => x.RewriteAsync(It.IsAny<Conversation>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult("New rewritten question"));
         sut.SetConversationQueryRewriter(conversationRewriterMock.Object);
 

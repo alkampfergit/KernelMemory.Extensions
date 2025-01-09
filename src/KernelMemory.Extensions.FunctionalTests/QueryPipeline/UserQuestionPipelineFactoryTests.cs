@@ -178,7 +178,7 @@ public class UserQuestionPipelineFactoryTests
 
     private class TestQueryRewriter : IConversationQueryRewriter
     {
-        public Task<string> RewriteAsync(Conversation conversation, string question)
+        public Task<string> RewriteAsync(Conversation conversation, string question, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(question);
         }
