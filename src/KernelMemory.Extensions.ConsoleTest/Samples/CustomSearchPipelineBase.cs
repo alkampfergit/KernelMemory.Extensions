@@ -73,6 +73,7 @@ internal class CustomSearchPipelineBase : ISample2
 
         services.AddSingleton(coereCommandRagQueryExecutorConfiguration);
         services.AddSingleton<RawCohereClient>();
+        services.AddSingleton<IPromptStore>(NullPromptStore.Instance);
         services.AddSingleton<CohereCommandRQueryExecutor>();
         services.AddHttpClient();
 
