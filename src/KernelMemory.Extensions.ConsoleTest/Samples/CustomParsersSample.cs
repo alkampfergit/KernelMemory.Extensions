@@ -1,4 +1,5 @@
 ﻿using KernelMemory.Extensions.ConsoleTest.Helper;
+using KernelMemory.Extensions.ConsoleTest.SpecialHandlers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
@@ -13,13 +14,13 @@ using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using Microsoft.KernelMemory.Pipeline;
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq;
-using HandlebarsDotNet.Extensions;
+using static Microsoft.KernelMemory.Constants.CustomContext;
 
 namespace SemanticMemory.Samples;
 
 internal class CustomParsersSample : ISample
 {
+
     public async Task RunSample(string fileToParse)
     {
         var services = new ServiceCollection();
@@ -60,6 +61,9 @@ internal class CustomParsersSample : ISample
         GenerateEmbeddingsHandler textEmbedding = new("gen_embeddings", orchestrator);
         await orchestrator.AddHandlerAsync(textEmbedding);
 
+        CustomizedEmbeddingsHandler questionAnwerParser = new CustomizedEmbeddingsHandler("qa_embeddings", orchestrator, ExtractTextFromChunk);
+        await orchestrator.AddHandlerAsync(questionAnwerParser);
+
         SaveRecordsHandler saveRecords = new("save_records", orchestrator);
         await orchestrator.AddHandlerAsync(saveRecords);
 
@@ -77,12 +81,14 @@ internal class CustomParsersSample : ISample
             .Then("extract")
             //.Then("partition")
             .Then("markdownpartition")
-            .Then("gen_embeddings")
+            //.Then("gen_embeddings")
+            .Then("qa_embeddings")
             .Then("save_records");
 
-        contextProvider.AddLLamaCloudParserOptions(fileName, "This is a manual for Dreame vacuum cleaner, I need you to extract a series of sections that can be useful for an helpdesk to answer user questions. You will create sections where each sections contains a question and an answer taken from the text. Each question will be separated with ---");
+        contextProvider.AddLLamaCloudParserOptions(fileName, @"This is a manual for Dreame vacuum cleaner, I need you to extract a series of sections that can be useful for an helpdesk to answer user questions. You will create sections where each sections contains a question and an answer taken from the text. Question must be on a single line. Each question will be separated with ---");
 
         var pipeline = pipelineBuilder.Build();
+        pipeline.GetContext().SetArg(EmbeddingGeneration.BatchSize, 50);
         await orchestrator.RunPipelineAsync(pipeline);
 
         // now ask a question to the user continuously until the user ask an empty question
@@ -97,6 +103,18 @@ internal class CustomParsersSample : ISample
                 Console.WriteLine(response.Result);
             }
         } while (!string.IsNullOrWhiteSpace(question));
+    }
+
+    private async Task<string> ExtractTextFromChunk(string text, CancellationToken token)
+    {
+        //I need to take first line from the text.
+        var lines = text.Split('\n');
+        if (lines.Length > 0)
+        {
+            var firstLine = lines[0];
+            return firstLine.Trim('\r', '\n', ' ', '*');
+        }
+        return text;
     }
 
     private static IKernelMemoryBuilder CreateBasicKernelMemoryBuilder(
