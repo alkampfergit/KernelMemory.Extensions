@@ -76,8 +76,6 @@ internal class SBertSample : ISample
            })
             .WithCustomTextPartitioningOptions(new TextPartitioningOptions
             {
-                // Max 150 tokens per sentence
-                MaxTokensPerLine = 150,
                 // When sentences are merged into paragraphs (aka partitions), stop at 384 tokens
                 MaxTokensPerParagraph = 384,
                 // Each paragraph contains the last 30 tokens from the previous one

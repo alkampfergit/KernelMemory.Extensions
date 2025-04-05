@@ -53,7 +53,7 @@ public class StructuredUglyToadPdfDecoder
                 previous = word;
             }
 
-            result.Sections.Add(new FileSection(page.Number, sb.ToString(), false));
+            result.Sections.Add(new Chunk(sb.ToString(), page.Number));
             sb.Clear();
         }
 

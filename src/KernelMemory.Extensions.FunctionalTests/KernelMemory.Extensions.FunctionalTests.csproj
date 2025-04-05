@@ -23,7 +23,6 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.abstractions" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

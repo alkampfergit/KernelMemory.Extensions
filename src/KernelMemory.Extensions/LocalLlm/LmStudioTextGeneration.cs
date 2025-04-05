@@ -1,5 +1,6 @@
 ﻿using KernelMemory.Extensions.Helper;
 using KernelMemory.Extensions.LocalLlm;
+using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
 using System;
 using System.Collections.Generic;
@@ -44,7 +45,7 @@ public class LmStudioTextGeneration : ITextGenerator
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<string> GenerateTextAsync(
+    public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
         string prompt,
         TextGenerationOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)

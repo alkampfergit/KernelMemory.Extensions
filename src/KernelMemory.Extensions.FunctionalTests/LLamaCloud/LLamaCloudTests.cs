@@ -12,7 +12,6 @@ namespace KernelMemory.Extensions.FunctionalTests.LLamaCloud;
 public class LLamaCloudTests
 {
     private readonly ServiceProvider _serviceProvider;
-    private readonly IHttpClientFactory _httpClientFactory;
 
     public LLamaCloudTests()
     {
@@ -43,7 +42,6 @@ public class LLamaCloudTests
         services.AddSingleton(sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger<LLamaCloudParserClient>());
 
         _serviceProvider = services.BuildServiceProvider();
-        _httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
     }
 
     [Fact]

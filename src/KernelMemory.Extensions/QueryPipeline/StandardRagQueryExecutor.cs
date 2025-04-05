@@ -117,7 +117,7 @@ namespace KernelMemory.Extensions
             await foreach (var x in this.GenerateAnswerAsync(userQuestion.Question, facts.ToString())
                                .WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                yield return new UserQuestionProgress(UserQuestionProgressType.AnswerPart, x);
+                yield return new UserQuestionProgress(UserQuestionProgressType.AnswerPart, x.Text);
                 text.Append(x);
 
                 if (this._log.IsEnabled(LogLevel.Trace) && text.Length - charsGenerated >= 30)
@@ -141,7 +141,7 @@ namespace KernelMemory.Extensions
         /// <param name="question"></param>
         /// <param name="facts"></param>
         /// <returns></returns>
-        private IAsyncEnumerable<string> GenerateAnswerAsync(string question, string facts)
+        private IAsyncEnumerable<GeneratedTextContent> GenerateAnswerAsync(string question, string facts)
         {
             var prompt = this._answerPrompt;
             prompt = prompt.Replace("{{$facts}}", facts.Trim(), StringComparison.OrdinalIgnoreCase);

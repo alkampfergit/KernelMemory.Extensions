@@ -116,7 +116,7 @@ public class LLamaCloudParserDocumentDecoder : IContentDecoder
         var markdown = await _client.GetJobRawMarkdownAsync(jobId);
 
         var result = new FileContent(MimeTypes.MarkDown);
-        result.Sections.Add(new FileSection(1, markdown, false));
+        result.Sections.Add(new Chunk( markdown, 1));
 
         return result;
     }

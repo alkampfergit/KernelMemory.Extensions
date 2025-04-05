@@ -1,4 +1,5 @@
-﻿using Microsoft.KernelMemory.AI;
+﻿using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.AI;
 using Microsoft.ML.Tokenizers;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ internal class AnthropicTextGeneration : ITextGenerator
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<string> GenerateTextAsync(
+    public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
         string prompt,
         TextGenerationOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
