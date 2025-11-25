@@ -170,14 +170,14 @@ public class ContextualRetrievalSample : ISample
         kernelMemoryBuilder
             .WithSimpleFileStorage(new SimpleFileStorageConfig()
             {
-                Directory = "/tmp/km/storage",
-                //Directory = "c:\\temp\\km2\\storage",
+                //Directory = "/tmp/km/storage",
+                Directory = "c:\\temp\\km2\\storage",
                 StorageType = FileSystemTypes.Disk
             })
             .WithSimpleVectorDb(new SimpleVectorDbConfig()
             {
-                Directory = "/tmp/km/vectorstorage",
-                //Directory = "c:\\temp\\km2\\vectorstorage",
+                //Directory = "/tmp/km/vectorstorage",
+                Directory = "c:\\temp\\km2\\vectorstorage",
                 StorageType = FileSystemTypes.Disk
             });
 
