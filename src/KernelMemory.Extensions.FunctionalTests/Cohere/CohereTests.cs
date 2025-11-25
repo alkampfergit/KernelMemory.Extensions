@@ -139,7 +139,7 @@ public class CohereTests
     public void Tokenizer_raw_test()
     {
         CohereTokenizer tokenizer = new(_httpClientFactory);
-        var count = tokenizer.CountToken("command-r-plus", "Now I'm using CommandR+ tokenizer");
+        var count = tokenizer.CountToken(CohereModels.CommandDefault, "Now I'm using CommandR+ tokenizer");
         Assert.Equal(8, count);
     }
 

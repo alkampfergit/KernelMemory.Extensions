@@ -453,18 +453,18 @@ internal class CustomSearchPipelineBase : ISample2
             .AddLogger(s => _loggingProvider.CreateHttpRequestBodyLogger(s.GetRequiredService<ILogger<DumpLoggingProvider>>())));
 
         kernelBuilder.Services.AddAzureOpenAIChatCompletion(
-            "GPT35_2",
+            "gpt-4o-mini",
             Dotenv.Get("OPENAI_API_BASE") ?? throw new ConfigurationException("OPENAI_API_BASE missing from .env file"),
             Dotenv.Get("OPENAI_API_KEY") ?? throw new ConfigurationException("OPENAI_API_KEY missing from .env file"),
-            serviceId: "gpt35",
-            modelId: "gpt35");
+            serviceId: "gpt-4o-mini",
+            modelId: "gpt-4o-mini");
 
         kernelBuilder.Services.AddAzureOpenAIChatCompletion(
-            "GPT4o", //"GPT35_2",//"GPT42",
+            "gpt-4o", //"GPT35_2",//"GPT42",
             Dotenv.Get("OPENAI_API_BASE") ?? throw new ConfigurationException("OPENAI_API_BASE missing from .env file"),
             Dotenv.Get("OPENAI_API_KEY") ?? throw new ConfigurationException("OPENAI_API_KEY missing from .env file"),
             serviceId: "default",
-            modelId: "gpt4o");
+            modelId: "gpt-4o");
 
         return kernelBuilder;
     }

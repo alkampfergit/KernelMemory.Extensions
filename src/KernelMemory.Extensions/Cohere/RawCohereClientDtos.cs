@@ -95,7 +95,7 @@ public class CohereRagRequest
     public string Message { get; set; }
 
     [JsonPropertyName("model")]
-    public string Model { get; set; } = "command-r-plus";
+    public string Model { get; set; } = CohereModels.CommandDefault;
 
     [JsonPropertyName("documents")]
     public List<RagDocument> Documents { get; set; }
@@ -425,6 +425,11 @@ public static class CohereModels
     public const string EmbedEnglishV2 = "embed-english-v2.0";
     public const string EmbedEnglishLightV2 = "embed-english-light-v2.0";
     public const string EmbedMultilingualV2 = "embed-multilingual-v2.0";
+    // Command/chat family models
+
+    public const string CommandA032025 = "command-a-03-2025";
+    // Default command model used by the RAG/Chat client
+    public const string CommandDefault = CommandA032025;
 }
 
 public class CohereEmbedRequest

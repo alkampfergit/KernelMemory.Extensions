@@ -16,23 +16,28 @@ public class CohereTokenizer
 {
     public Dictionary<string, TiktokenTokenizer> Tokenizers { get; set; } = new();
 
-    public CohereTokenizer(IHttpClientFactory httpClientFactory)
+    public CohereTokenizer(IHttpClientFactory httpClientFactory, IEnumerable<string>? modelNames = null)
     {
-        var tokenizerFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "command-r-plus.tiktoken");
-        var tokenizerExtraFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "command-r-plus.tiktoken.extra");
+        var models = modelNames?.ToArray() ?? new[] { CohereModels.CommandDefault };
 
-        DownloadCohereTokenizerSpecifcationFileAndConvertToTiktoken(
-            httpClientFactory,
-            "https://storage.googleapis.com/cohere-public/tokenizers/command-r-plus.json",
-            tokenizerFile,
-            tokenizerExtraFile);
+        foreach (var modelName in models)
+        {
+            var tokenizerFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{modelName}.tiktoken");
+            var tokenizerExtraFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{modelName}.tiktoken.extra");
 
-        //now we need to load the tokenizer, first of all we load the extra data
-        var extraData = File.ReadAllText(tokenizerExtraFile);
-        var ed = JsonSerializer.Deserialize<ExtraTokenizerData>(extraData)!;
+            DownloadCohereTokenizerSpecifcationFileAndConvertToTiktoken(
+                httpClientFactory,
+                $"https://storage.googleapis.com/cohere-public/tokenizers/{modelName}.json",
+                tokenizerFile,
+                tokenizerExtraFile);
 
-        var tiktoken = TiktokenTokenizer.Create(tokenizerFile, null, null, specialTokens: ed.GetSpecialToken());
-        Tokenizers["command-r-plus"] = tiktoken;
+            //now we need to load the tokenizer, first of all we load the extra data
+            var extraData = File.ReadAllText(tokenizerExtraFile);
+            var ed = JsonSerializer.Deserialize<ExtraTokenizerData>(extraData)!;
+
+            var tiktoken = TiktokenTokenizer.Create(tokenizerFile, null, null, specialTokens: ed.GetSpecialToken());
+            Tokenizers[modelName] = tiktoken;
+        }
     }
 
     private static void DownloadCohereTokenizerSpecifcationFileAndConvertToTiktoken(
